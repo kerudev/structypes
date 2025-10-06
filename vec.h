@@ -23,15 +23,15 @@ typedef struct Vec {
     /* Array of opaque elements.*/
     void *items;
     /* Size of a Vec item.*/
-    size_t item_size;
+    size_t offset;
     /* How many items the Vec is holding.*/
     size_t size;
     /* How many items the Vec can hold.*/
     size_t capacity;
 } Vec;
 
-/* Creates a new Vec. Uses `item_size` to `malloc` items. */
-Vec *vec_new(size_t item_size);
+/* Creates a new Vec. Uses `offset` to `malloc` items. */
+Vec *vec_new(size_t offset);
 
 /* Frees `v->items` and `v`. To free strings, use `vec_free_deep`. */
 bool vec_free(Vec *v);
@@ -86,7 +86,7 @@ void err(char *func, char *msg, ...) {
     va_end(args);
 }
 
-Vec *vec_new(size_t item_size) {
+Vec *vec_new(size_t offset) {
     if (VEC_CAPACITY_STEP < 0) {
         err("vec_new", "VEC_CAPACITY_STEP can't be negative");
         return NULL;
@@ -101,8 +101,8 @@ Vec *vec_new(size_t item_size) {
 
     v->size = 0;
     v->capacity = VEC_CAPACITY_STEP;
-    v->item_size = item_size;
-    v->items = malloc(v->capacity * v->item_size);
+    v->offset = offset;
+    v->items = malloc(v->capacity * v->offset);
 
     if (!v->items) {
         err("vec_new", "malloc error on initialize items");
@@ -139,7 +139,7 @@ bool vec_push(Vec *v, void *item) {
 
         v->capacity += VEC_CAPACITY_STEP;
 
-        void *tmp = realloc(v->items, v->capacity * v->item_size);
+        void *tmp = realloc(v->items, v->capacity * v->offset);
         if (!tmp) {
             err("vec_push", "realloc");
             return false;
@@ -149,9 +149,9 @@ bool vec_push(Vec *v, void *item) {
     }
 
     memcpy(
-        (char *)v->items + v->size * v->item_size,
+        (char *)v->items + v->size * v->offset,
         item,
-        v->item_size
+        v->offset
     );
 
     v->size++;
@@ -165,15 +165,15 @@ bool vec_extend(Vec *dst, Vec *src) {
         return false;
     }
 
-    if (dst->item_size != src->item_size) {
-        err("vec_extend", "item_size doesn't match on both vectors");
+    if (dst->offset != src->offset) {
+        err("vec_extend", "offset doesn't match on both vectors");
         return false;
     }
 
     size_t totalSize = dst->size + src->size;
 
     if (totalSize > dst->capacity) {
-        void *tmp = realloc(dst->items, totalSize * dst->item_size);
+        void *tmp = realloc(dst->items, totalSize * dst->offset);
 
         if (!tmp) {
             err("vec_extend", "realloc");
@@ -184,9 +184,9 @@ bool vec_extend(Vec *dst, Vec *src) {
     }
 
     memcpy(
-        (char *)dst->items + dst->size * dst->item_size,
+        (char *)dst->items + dst->size * dst->offset,
         src->items,
-        src->size * dst->item_size
+        src->size * dst->offset
     );
 
     dst->size = totalSize;
@@ -207,7 +207,7 @@ void *vec_get(Vec *v, size_t index) {
 
     // TODO support for negative indexing
 
-    return ((char *)v->items + index * v->item_size);
+    return ((char *)v->items + index * v->offset);
 }
 
 void *vec_get_ptr(Vec *v, size_t index) {

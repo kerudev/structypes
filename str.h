@@ -16,10 +16,29 @@
 #include <string.h>
 #include <stddef.h>
 
-/* Obtains the character at `n`. Supports negative indexing. */
+/**
+ * Obtains the character at `n`. Supports negative indexing.
+ * Creates an internal copy of `str` so it isn't mutated.
+ */
 char str_char_at(char *str, int n);
 
-char *str_split(char *str, const char *sep);
+/**
+ * Splits `str` using the characters in `sep`.
+ * Returns an array of pointers to strings with a length of `total`.
+ */
+char **str_split(char *str, const char *sep, size_t *total);
+
+/**
+ * Splits `str` using the characters in `sep` and returns the first result.
+ * Creates an internal copy of `str` so it isn't mutated.
+ */
+char *str_split_first(char *str, const char *sep);
+
+/**
+ * Splits `str` using the characters in `sep` and returns the last result.
+ * Creates an internal copy of `str` so it isn't mutated.
+ */
+char *str_split_last(char *str, const char *sep);
 
 #endif // STR_H_
 
@@ -43,13 +62,58 @@ char str_char_at(char *str, int n) {
     return (n < 0) ? str[size + n] : str[n];
 }
 
-char *str_split(char *str, const char *sep) {
+char **str_split(char *str, const char *sep, size_t *total) {
     char *tmp = strdup(str);
+    if (tmp == NULL) return NULL;
 
-    char *tokens = strtok(tmp, sep);
-    while (tokens) tokens = strtok(NULL, sep);
+    char **tokens = NULL;
+    size_t size = sizeof(char *);
+    size_t cap = 0;
 
+    char *token = strtok(tmp, sep);
+    while (token) {
+        char **new_tokens = realloc(tokens, (cap + 1) * size);
+
+        if (!new_tokens) {
+            free(tokens);
+            free(tmp);
+            return NULL;
+        }
+
+        tokens = new_tokens;
+        tokens[cap++] = strdup(token);
+        token = strtok(NULL, sep);
+    }
+
+    *total = cap;
     return tokens;
+}
+
+char *str_split_first(char *str, const char *sep) {
+    char *tmp = strdup(str);
+    if (tmp == NULL) return NULL;
+
+    char *first = strdup(strtok(tmp, sep));
+
+    free(tmp);
+
+    return first;
+}
+
+char *str_split_last(char *str, const char *sep) {
+    char *tmp = strdup(str);
+    if (tmp == NULL) return NULL;
+
+    char *token = strtok(tmp, sep);
+    char *last;
+    while (token) {
+        last = strdup(token);
+        token = strtok(NULL, sep);
+    }
+
+    free(tmp);
+
+    return last;
 }
 
 #endif // STR_IMPLEMENTATION

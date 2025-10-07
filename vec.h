@@ -1,9 +1,5 @@
 // vec.h - A vector implementation that stores generic pointers.
 //
-// All functions return a value for error handling:
-// - int: 0 on failure, 1 on success.
-// - void *: NULL on failure, void * on success.
-//
 // Useful macros:
 // - STRUCTYPES_IMPLEMENTATION: defines all of structype's implementations.
 // - VEC_IMPLEMENTATION: implementations of the Vec structure.
@@ -31,30 +27,66 @@ typedef struct Vec {
     size_t capacity;
 } Vec;
 
-/* Creates a new Vec. Uses `offset` to `malloc` items. */
+/**
+ * Creates a new Vec. Uses `offset` to `malloc` items.
+ *
+ * Returns `NULL` when:
+ * - `VEC_CAPACITY_STEP < 1`
+ * - `malloc` for `Vec` fails
+ * - `malloc` for `Vec.items` fails
+ */
 Vec *vec_new(size_t offset);
 
-/* Frees `v->items` and `v`. To free strings, use `vec_free_deep`. */
+/**
+ * Frees `v->items` and `v`. To free strings, use `vec_free_deep`.
+ *
+ * Returns `false` when:
+ * - `v` evaluates to false.
+ */
 bool vec_free(Vec *v);
 
-/* Frees `v->items` (iterating over each element) and `v`. */
+/**
+ * Frees `v->items` (iterating over each element) and `v`.
+ *
+ * Returns `false` when:
+ * - `v` evaluates to false.
+ */
 bool vec_free_deep(Vec *v);
 
-/* Adds an `item` at the end of `v->items`. */
+/**
+ * Adds an `item` at the end of `v->items`.
+ *
+ * Returns `false` when:
+ * - `VEC_CAPACITY_STEP < 1`
+ * - `realloc` for `v->items` fails
+ */
 bool vec_push(Vec *v, void *item);
 
-/* Adds `src->items` at the end of `dst->items`. */
+/**
+ * Adds `src->items` at the end of `dst->items`.
+ *
+ * Returns `false` when:
+ * - `size->size == 0`
+ * - `dst->offset != src->offset`
+ * - `realloc` for `dst->items` fails
+ */
 bool vec_extend(Vec *dst, Vec *src);
 
 /**
  * Returns a pointer to the element at `index`.
- * Returns `NULL` if `index` is out of bounds or `v->size == 0`.
+ *
+ * Returns `NULL` when:
+ * - `index` is out of bounds 
+ * - `v->size == 0`
  */
 void *vec_get(Vec *v, size_t index);
 
 /**
  * Returns a pointer to the element's value at `index`.
- * Returns `NULL` if `index` is out of bounds or `v->size == 0`.
+ *
+ * Returns `NULL` when:
+ * - `index` is out of bounds 
+ * - `v->size == 0`
  */
 void *vec_get_ptr(Vec *v, size_t index);
 
@@ -64,7 +96,14 @@ void *vec_get_ptr(Vec *v, size_t index);
  */
 #define vec_get_as(v, i, type) (*(type *)vec_get((v), (i)))
 
-/* Prints each item in `v`. */
+
+
+/**
+ * Prints each item in `v`.
+ *
+ * Returns `false` when:
+ * - `v->size == 0`
+ */
 bool vec_print(Vec *v);
 
 #endif // VEC_H_
@@ -76,7 +115,7 @@ bool vec_print(Vec *v);
 #define VEC_CAPACITY_STEP 4
 #endif // VEC_CAPACITY_STEP
 
-void err(char *func, char *msg, ...) {
+static void err(char *func, char *msg, ...) {
     va_list args;
     va_start(args, msg);
 
@@ -88,8 +127,8 @@ void err(char *func, char *msg, ...) {
 }
 
 Vec *vec_new(size_t offset) {
-    if (VEC_CAPACITY_STEP < 0) {
-        err("vec_new", "VEC_CAPACITY_STEP can't be negative");
+    if (VEC_CAPACITY_STEP < 1) {
+        err("vec_new", "VEC_CAPACITY_STEP must be 1 or greater");
         return NULL;
     }
 
@@ -133,8 +172,8 @@ bool vec_free_deep(Vec *v) {
 
 bool vec_push(Vec *v, void *item) {
     if (v->size == v->capacity) {
-        if (VEC_CAPACITY_STEP < 0) {
-            err("vec_push", "VEC_CAPACITY_STEP can't be negative");
+        if (VEC_CAPACITY_STEP < 1) {
+            err("vec_push", "VEC_CAPACITY_STEP must be 1 or greater");
             return false;
         }
 

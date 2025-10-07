@@ -5,8 +5,8 @@
 // - void *: NULL on failure, void * on success.
 //
 // Useful macros:
-// - STR_IMPLEMENTATION: implementations of the Vec structure.
-// - STR_CAPACITY_STEP: used to initialize and realloc the Vec's capacity.
+// - STRUCTYPES_IMPLEMENTATION: defines all of structype's implementations.
+// - STR_IMPLEMENTATION: implementations of string functions.
 
 #ifndef STR_H_
 #define STR_H_
@@ -42,8 +42,8 @@ char *str_split_last(char *str, const char *sep);
 
 #endif // STR_H_
 
-#if defined(STR_IMPLEMENTATION) && !defined(__STR_ALREADY_IMPLEMENTED)
-#define __STR_ALREADY_IMPLEMENTED
+#if !defined(__STR_IMPLEMENTED) && (defined(STRUCTYPES_IMPLEMENTATION) || defined(STR_IMPLEMENTATION))
+#define __STR_IMPLEMENTED
 
 #ifndef STR_CAPACITY_STEP
 #define STR_CAPACITY_STEP 128

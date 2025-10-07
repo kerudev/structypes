@@ -5,6 +5,7 @@
 // - void *: NULL on failure, void * on success.
 //
 // Useful macros:
+// - STRUCTYPES_IMPLEMENTATION: defines all of structype's implementations.
 // - VEC_IMPLEMENTATION: implementations of the Vec structure.
 // - VEC_CAPACITY_STEP: used to initialize and realloc the Vec's capacity.
 
@@ -68,8 +69,8 @@ bool vec_print(Vec *v);
 
 #endif // VEC_H_
 
-#if defined(VEC_IMPLEMENTATION) && !defined(__VEC_ALREADY_IMPLEMENTED)
-#define __VEC_ALREADY_IMPLEMENTED
+#if !defined(__VEC_IS_IMPLEMENTED) && (defined(STRUCTYPES_IMPLEMENTATION) || defined(VEC_IMPLEMENTATION))
+#define __VEC_IS_IMPLEMENTED
 
 #ifndef VEC_CAPACITY_STEP
 #define VEC_CAPACITY_STEP 4

@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 
 /** A node. */
 typedef struct Node {
@@ -32,6 +33,18 @@ typedef struct Node {
  */
 typedef Node Tree;
 
+typedef enum {
+    NONE,
+    ASC,
+    DESC,
+} NodeSortOpts;
+
+typedef struct {
+    unsigned int indent;
+    unsigned int indent_step;
+    NodeSortOpts sort;
+} NodePrintOpts;
+
 // TODO error handling messages
 
 /**
@@ -53,6 +66,8 @@ Tree *tree_new(void *value);
 Node *node_new(Node *parent, void *value);
 
 /**
+ * Creates a node with `value` inside of `node`. 
+ *
  * Returns `false` when:
  * - `realloc` for `node->nodes` fails.
  * - `node_new` fails.
@@ -60,23 +75,45 @@ Node *node_new(Node *parent, void *value);
 bool node_new_child(Node *node, void *value);
 
 /**
+ * Appends `child` to `parent`.
+ *
  * Returns `false` when:
  * - `realloc` for `node->nodes` fails.
  */
-bool node_add_child(Node *node, Node *child);
+bool node_add_child(Node *parent, Node *child);
+
+/**
+ * Same as `node_print_deep`, but with style options.
+ *
+ * Nodes with `size == 0` will be printed first always.
+ *
+ * `opts` changes the function's behaviour:
+ * - indent: starting indentation.
+ * - indent_step: how much indent will increment on each level.
+ * - sort: how nodes will be ordered by their value.
+ *   - `NONE`: insertion order (no sort).
+ *   - `ASC` : ascending order.
+ *   - `DESC`: descending order.
+ *
+ * Returns `false` when:
+ * - `node` evaluates to false. 
+ * - `node->value` is `NULL`.
+ * - `opts.indent_step < 1`.
+ */
+bool node_print(Node *node, NodePrintOpts opts);
 
 /**
  * A "deep" print of a `Node`.
  *
- * Prints the value of `tree` and recurses over each child node (and their
+ * Prints the value of `node` and recurses over each child node (and their
  * child nodes too).
- * 
- * Use `node_print` to print just the immediate child nodes of `tree`.
+ *
+ * Use `node_print_shallow` to print just the immediate child nodes of `node`.
  *
  * Returns `false` when:
- * - `tree` evaluates to false.
+ * - `node` evaluates to false.
  */
-bool tree_print(Tree *tree);
+bool node_print_deep(Node *tree);
 
 /**
  * A "shallow" print of a `Node`.
@@ -84,12 +121,12 @@ bool tree_print(Tree *tree);
  * Prints the value of `node` and the value of its immediate child nodes, but
  * it doesn't recurse into deeper nodes.
  *
- * Use `tree_print` to print deeper nodes of `node`.
+ * Use `tree_print_deep` to print deeper nodes of `node`.
  *
  * Returns `false` when:
  * - `node` evaluates to false.
  */
-bool node_print(Node *node);
+bool node_print_shallow(Node *node);
 
 /**
  * Prints the values of `parent`, `value` and `size` of `node`.
@@ -115,10 +152,34 @@ bool tree_free(Tree *tree);
  */
 bool node_free(Node *node);
 
+/**
+ * Returns a NodePrintOpts with the defined default values:
+ * 
+ * By defining the implementation macros, the default values are:
+ * - indent: 0
+ * - indent_step: 2
+ * - sort: `NONE`
+ */
+NodePrintOpts nodeprintopts_default();
+
 #endif // TREE_H_
 
 #if !defined(__TREE_IMPLEMENTED) && (defined(STRUCTYPES_IMPLEMENTATION) || defined(TREE_IMPLEMENTATION))
 #define __TREE_IMPLEMENTED
+
+static int _indent = 0;
+static int _indent_step = 2;
+static NodeSortOpts _sort;
+
+static int _comp(const void *a, const void *b) {
+    const void *n1 = (_sort == ASC) ? a : b;
+    const void *n2 = (_sort == ASC) ? b : a;
+
+    return strcmp(
+        *(const char **)((Node *)n1)->value,
+        *(const char **)((Node *)n2)->value
+    );
+}
 
 Tree *tree_new(void *value) {
     Tree *tree = (Tree *)malloc(sizeof(Tree));
@@ -185,31 +246,84 @@ bool node_add_child(Node *parent, Node *child) {
     return true;
 }
 
-bool tree_print(Tree *tree) {
-    if (!tree) return false;
+bool node_print(Node *node, NodePrintOpts opts) {
+    if (!node || node->value == NULL || opts.indent_step < 1) return false;
 
-    printf("%s\n", tree->value);
+    printf("%*s%s\n", opts.indent, "", node->value);
+    if (!node->size) return true;
 
-    for (size_t i = 0; i < tree->size; i++) {
-        Node *node = tree->nodes[i];
+    size_t sizeofNode = sizeof(Node *);
+
+    Node **zero = (Node **) malloc(sizeofNode * node->size);
+    Node **nonZero = (Node **) malloc(sizeofNode * node->size);
+
+    if (!zero || !nonZero) {
+        free(zero);
+        free(nonZero);
+        return false;
+    }
+
+    int zeroLen = 0;
+    int nonZeroLen = 0;
+
+    for (size_t i = 0; i < node->size; i++) {
+        if (!node->nodes[i]->size) zero[zeroLen++] = node->nodes[i];
+        else nonZero[nonZeroLen++] = node->nodes[i];
+    }
+
+    if (opts.sort != NONE) {
+        _sort = opts.sort;
+        qsort(zero, zeroLen, sizeofNode, _comp);
+        qsort(nonZero, nonZeroLen, sizeofNode, _comp);
+    }    
+
+    opts.indent += opts.indent_step;
+
+    for (size_t i = 0; i < zeroLen; i++)
+        printf("%*s%s\n", opts.indent, "", zero[i]->value);
+
+    for (size_t i = 0; i < nonZeroLen; i++)
+        if (!node_print(nonZero[i], opts)) {
+            free(zero);
+            free(nonZero);
+            return false;
+        }
+
+    free(zero);
+    free(nonZero);
+
+    return true;
+}
+
+bool node_print_deep(Node *node) {
+    if (!node) return false;
+
+    printf("%*s%s\n", _indent, "", node->value);
+
+    _indent += _indent_step;
+    size_t local_indent = _indent;
+
+    for (size_t i = 0; i < node->size; i++) {
+        Node *node = node->nodes[i];
 
         if (node->size > 0) {
-            tree_print(node);
+            if (!node_print_deep(node)) return false;
+            _indent = local_indent;
         } else {
-            printf("  %s\n", node->value);
+            printf("%*s%s\n", _indent, "", node->value);
         }
     }
 
     return true;
 }
 
-bool node_print(Node *node) {
+bool node_print_shallow(Node *node) {
     if (!node) return false;
 
     printf("%s\n", node->value);
 
     for (size_t i = 0; i < node->size; i++)
-        printf("  %s\n", node->nodes[i]->value);
+        printf("%*s%s\n", _indent_step, "", node->nodes[i]->value);
 
     return true;
 }
@@ -252,6 +366,14 @@ bool node_free(Node *node) {
     free(node);
 
     return true;
+}
+
+NodePrintOpts nodeprintopts_default() {
+    return (NodePrintOpts) {
+        .indent      = 0,
+        .indent_step = 2,
+        .sort        = ASC,
+    };
 }
 
 #endif // TREE_IMPLEMENTATION

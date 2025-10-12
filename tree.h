@@ -137,18 +137,14 @@ bool node_print_shallow(Node *node);
 bool node_info(Node *node);
 
 /**
- * Frees `tree` and `tree->nodes`.
+ * Frees `node` and `node->nodes`.
+ * 
+ * Keep in mind that if you free a node that has a parent, not removing that
+ * index in the parent is a reference to a dead node.
  *
  * Returns `false` when:
- * - `tree` or `tree->nodes` evaluate to false.
- */
-bool tree_free(Tree *tree);
-
-/**
- * Frees `node` and child nodes if `node->size > 0`.
- *
- * Returns `false` when:
- * - `node` evaluates to false.
+ * - `node` or `node->nodes` evaluate to false.
+ * - Recursion fails on `node_free`.
  */
 bool node_free(Node *node);
 
@@ -338,31 +334,19 @@ bool node_info(Node *node) {
     return true;
 }
 
-bool tree_free(Tree *tree) {
-    if (!tree || !tree->nodes) return false;
+bool node_free(Node *node) {
+    if (!node || !node->nodes) return false;
 
-    for (size_t i = 0; i < tree->size; i++) {
-        if (tree->nodes[i]->size > 0) {
-            free(tree->nodes[i]);
+    for (size_t i = 0; i < node->size; i++) {
+        if (node->nodes[i]->size > 0) {
+            free(node->nodes[i]);
             continue;
         }
 
-        tree_free(tree->nodes[i]);
+        if (!node_free(node->nodes[i])) return false;
     }
 
-    free(tree->nodes);
-    free(tree);
-
-    return true;
-}
-
-// TODO not removing node in parent->nodes might cause a reference to a dead node
-bool node_free(Node *node) {
-    if (!node) return false;
-
-    if (node->size > 0)
-        tree_free(node);
-
+    free(node->nodes);
     free(node);
 
     return true;

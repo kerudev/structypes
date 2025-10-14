@@ -2,6 +2,7 @@
 //
 // Useful macros:
 // - STRUCTYPES_IMPLEMENTATION: defines all of structype's implementations.
+// - STRUCTYPES_DEBUG: if defined, prints error messages.
 // - STR_IMPLEMENTATION: implementations of string functions.
 
 #ifndef STR_H_
@@ -99,8 +100,21 @@ char *str_concat_va(char *first, char *second, ...);
 #if !defined(__STR_IMPLEMENTED) && (defined(STRUCTYPES_IMPLEMENTATION) || defined(STR_IMPLEMENTATION))
 #define __STR_IMPLEMENTED
 
+#ifdef STRUCTYPES_DEBUG
+static void _str_err(char *msg, ...) {
+    va_list args;
+    va_start(args, msg);
+    vfprintf(stderr, msg, args);
+    fprintf(stderr, "\n");
+    va_end(args);
+}
+#define THROW(ret, msg, ...) ({ _str_err(msg, ##__VA_ARGS__); return ret; })
+#else
+#define THROW(ret, msg, ...) ({ return ret; })
+#endif
+
 size_t str_len(char *s) {
-    if (!s) return 0;
+    if (!s) THROW(0, "str_len: s evaluates to false");
 
     size_t len = 0;
     while (s[len]) len++;
@@ -108,11 +122,11 @@ size_t str_len(char *s) {
 }
 
 char *str_clone(char *s) {
-    if (!s) return NULL;
+    if (!s) THROW(NULL, "str_clone: s evaluates to false");
 
     size_t len = str_len(s) + 1;
     char *copy = malloc(len);
-    if (!copy) return NULL;
+    if (!copy) THROW(NULL, "str_clone: malloc error");
 
     for (size_t i = 0; i < len; i++) copy[i] = s[i];
 
@@ -122,10 +136,8 @@ char *str_clone(char *s) {
 char str_char_at(char *str, int n) {
     int size = (int)str_len(str);
 
-    if (n > size) {
-        printf("Index %d out of bounds for string of size %zu\n", n, size);
-        return '\0';
-    }
+    if (n > size)
+        THROW('\0', "str_char_at: Index %d out of bounds for string of size %zu\n", n, size);
 
     // TODO check for negative index overflow
 
@@ -134,7 +146,7 @@ char str_char_at(char *str, int n) {
 
 char **str_split(char *str, const char *sep, size_t *total) {
     char *tmp = str_clone(str);
-    if (tmp == NULL) return NULL;
+    if (tmp == NULL) THROW(NULL, "str_split: error cloning str");
 
     char **tokens = NULL;
     size_t size = sizeof(char *);
@@ -144,11 +156,10 @@ char **str_split(char *str, const char *sep, size_t *total) {
     char *token = strtok(tmp, sep);
     while (token) {
         char **new_tokens = realloc(tokens, (cap + 1) * size);
-
         if (!new_tokens) {
             free(tokens);
             free(tmp);
-            return NULL;
+            THROW(NULL, "str_split: realloc error");
         }
 
         tokens = new_tokens;
@@ -162,12 +173,12 @@ char **str_split(char *str, const char *sep, size_t *total) {
 
 char *str_split_first(char *str, const char *sep) {
     char *tmp = str_clone(str);
-    if (tmp == NULL) return NULL;
+    if (tmp == NULL) THROW(NULL, "str_split_first: error cloning str");
 
     char *token = strtok(tmp, sep);
     if (token == NULL) {
         free(tmp);
-        return NULL;
+        THROW(NULL, "str_split_first: strtok error");
     }
 
     char *first = str_clone(token);
@@ -178,12 +189,12 @@ char *str_split_first(char *str, const char *sep) {
 
 char *str_split_last(char *str, const char *sep) {
     char *tmp = str_clone(str);
-    if (tmp == NULL) return NULL;
+    if (tmp == NULL) THROW(NULL, "str_split_last: error cloning str");
 
     char *token = strtok(tmp, sep);
     if (token == NULL) {
         free(tmp);
-        return NULL;
+        THROW(NULL, "str_split_last: strtok error");
     }
 
     char *last;
@@ -198,10 +209,12 @@ char *str_split_last(char *str, const char *sep) {
 }
 
 char *str_concat(char **arr, size_t size) {
-    if (!arr || !size) return NULL;
+    if (!arr) THROW(NULL, "str_concat: arr evaluates to false");
+    if (!size) THROW(NULL, "str_concat: size can't be 0");
 
     char *buf = malloc(str_len(arr[0]) + 1);
-    if (!buf) return NULL;
+    if (!buf) THROW(NULL, "str_concat: malloc error");
+
 
     strcpy(buf, arr[0]);
 
@@ -212,7 +225,7 @@ char *str_concat(char **arr, size_t size) {
         char *tmp = realloc(buf, total + elementSize + 1);
         if (!tmp) {
             free(buf);
-            return NULL;
+            THROW(NULL, "str_concat: realloc error");
         }
 
         buf = tmp;
@@ -224,10 +237,11 @@ char *str_concat(char **arr, size_t size) {
 }
 
 char *str_concat_va(char *first, char *second, ...) {
-    if (first == NULL || second == NULL) return NULL;
+    if (first == NULL) THROW(NULL, "str_concat_va: first can't be NULL");
+    if (second == NULL) THROW(NULL, "str_concat_va: second can't be NULL");
 
     char *buf = malloc(str_len(first) + str_len(second) + 1);
-    if (!buf) return NULL;
+    if (!buf) THROW(NULL, "str_concat_va: malloc error");
 
     strcpy(buf, first);
     strcat(buf, second);
@@ -241,7 +255,7 @@ char *str_concat_va(char *first, char *second, ...) {
         if (!tmp) {
             free(buf);
             va_end(args);
-            return NULL;
+            THROW(NULL, "str_concat_va: realloc error");
         }
 
         buf = tmp;

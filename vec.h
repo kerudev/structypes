@@ -2,6 +2,7 @@
 //
 // Useful macros:
 // - STRUCTYPES_IMPLEMENTATION: defines all of structype's implementations.
+// - STRUCTYPES_DEBUG: if defined, prints error messages.
 // - VEC_IMPLEMENTATION: implementations of the Vec structure.
 // - VEC_CAPACITY_STEP: used to initialize and realloc the Vec's capacity.
 
@@ -15,9 +16,9 @@
 #include <stdarg.h>
 #include <stdbool.h>
 
-/* Dynamic array that holds opaque elements. */
+/* Dynamic array that holds generic pointers. */
 typedef struct Vec {
-    /* Array of opaque elements.*/
+    /* Array of generic pointers.*/
     void *items;
     /* Size of a Vec item.*/
     size_t offset;
@@ -28,7 +29,7 @@ typedef struct Vec {
 } Vec;
 
 /**
- * Creates a new Vec. Uses `offset` to `malloc` items.
+ * Creates a new `Vec`. Uses `offset` to `malloc` items.
  *
  * Returns `NULL` when:
  * - `VEC_CAPACITY_STEP < 1`
@@ -96,8 +97,6 @@ void *vec_get_ptr(Vec *v, size_t index);
  */
 #define vec_get_as(v, i, type) (*(type *)vec_get((v), (i)))
 
-
-
 /**
  * Prints each item in `v`.
  *
@@ -115,45 +114,40 @@ bool vec_print(Vec *v);
 #define VEC_CAPACITY_STEP 4
 #endif // VEC_CAPACITY_STEP
 
-static void err(char *func, char *msg, ...) {
+#ifdef STRUCTYPES_DEBUG
+static void _vec_err(char *msg, ...) {
     va_list args;
     va_start(args, msg);
-
-    fprintf(stderr, "%s: ", func);
     vfprintf(stderr, msg, args);
     fprintf(stderr, "\n");
-
     va_end(args);
 }
+#define THROW(ret, msg, ...) ({ _vec_err(msg, ##__VA_ARGS__); return ret; })
+#else
+#define THROW(ret, msg, ...) ({ return ret; })
+#endif
 
 Vec *vec_new(size_t offset) {
-    if (VEC_CAPACITY_STEP < 1) {
-        err("vec_new", "VEC_CAPACITY_STEP must be 1 or greater");
-        return NULL;
-    }
+    if (VEC_CAPACITY_STEP < 1)
+        THROW(NULL, "vec_new: VEC_CAPACITY_STEP must be 1 or greater");
 
     Vec *v = (Vec *)malloc(sizeof(Vec));
-
-    if (!v) {
-        err("vec_new", "malloc error on initialize vector");
-        return NULL;
-    }
+    if (!v)
+        THROW(NULL, "vec_new: malloc error on initialize vector");
 
     v->size = 0;
     v->capacity = VEC_CAPACITY_STEP;
     v->offset = offset;
     v->items = malloc(v->capacity * v->offset);
 
-    if (!v->items) {
-        err("vec_new", "malloc error on initialize items");
-        return NULL;
-    }
+    if (!v->items)
+        THROW(NULL, "vec_new: malloc error on initialize items");
 
     return v;
 }
 
 bool vec_free(Vec *v) {
-    if (!v) return false;
+    if (!v) THROW(false, "vec_free: v evaluates to false");
 
     free(v->items);
     free(v);
@@ -162,7 +156,7 @@ bool vec_free(Vec *v) {
 }
 
 bool vec_free_deep(Vec *v) {
-    if (!v) return false;
+    if (!v) THROW(false, "vec_free_deep: v evaluates to false");
 
     for (size_t i = 0; i < v->size; i++)
         free(*(void **)vec_get(v, i));
@@ -172,18 +166,13 @@ bool vec_free_deep(Vec *v) {
 
 bool vec_push(Vec *v, void *item) {
     if (v->size == v->capacity) {
-        if (VEC_CAPACITY_STEP < 1) {
-            err("vec_push", "VEC_CAPACITY_STEP must be 1 or greater");
-            return false;
-        }
+        if (VEC_CAPACITY_STEP < 1)
+            THROW(false, "vec_push: VEC_CAPACITY_STEP must be 1 or greater");
 
         v->capacity += VEC_CAPACITY_STEP;
 
         void *tmp = realloc(v->items, v->capacity * v->offset);
-        if (!tmp) {
-            err("vec_push", "realloc");
-            return false;
-        }
+        if (!tmp) THROW(false, "vec_push: realloc");
 
         v->items = tmp;
     }
@@ -200,25 +189,17 @@ bool vec_push(Vec *v, void *item) {
 }
 
 bool vec_extend(Vec *dst, Vec *src) {
-    if (src->size == 0) {
-        err("vec_extend", "src vector is uninitialized");
-        return false;
-    }
+    if (!src->size)
+        THROW(false, "vec_extend: src vector is uninitialized");
 
-    if (dst->offset != src->offset) {
-        err("vec_extend", "offset doesn't match on both vectors");
-        return false;
-    }
+    if (dst->offset != src->offset)
+        THROW(false, "vec_extend: offset doesn't match on both vectors");
 
     size_t totalSize = dst->size + src->size;
 
     if (totalSize > dst->capacity) {
         void *tmp = realloc(dst->items, totalSize * dst->offset);
-
-        if (!tmp) {
-            err("vec_extend", "realloc");
-            return false;
-        }
+        if (!tmp) THROW(false, "vec_extend: realloc");
 
         dst->items = tmp;
     }
@@ -235,15 +216,11 @@ bool vec_extend(Vec *dst, Vec *src) {
 }
 
 void *vec_get(Vec *v, size_t index) {
-    if (v->size == 0) {
-        err("vec_get", "vector is uninitialized");
-        return NULL;
-    }
+    if (!v->size)
+        THROW(NULL, "vec_get: vector is uninitialized");
 
-    if (index >= v->size) {
-        err("vec_get", "index %zu out of bounds (size %zu)", index, v->size);
-        return NULL;
-    }
+    if (index >= v->size)
+        THROW(NULL, "vec_get: index %zu out of bounds (size %zu)", index, v->size);
 
     // TODO support for negative indexing
 
@@ -255,10 +232,8 @@ void *vec_get_ptr(Vec *v, size_t index) {
 }
 
 bool vec_print(Vec *v) {
-    if (v->size == 0) {
-        err("vec_print", "vector is uninitialized");
-        return false;
-    }
+    if (!v->size)
+        THROW(false, "vec_print: vector is uninitialized");
 
     for (size_t i = 0; i < v->size; i++)
         printf("%d %s\n", i, *(char **)vec_get(v, i));

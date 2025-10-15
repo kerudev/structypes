@@ -17,13 +17,13 @@
 /** A node. */
 typedef struct Node {
     /** Value of the node. */
-    void        *value;
+    void *value;
     /** Pointer to the parent node. */
     struct Node *parent;
     /** Array of children nodes. */
     struct Node **nodes;
     /** Number of child nodes. */
-    size_t      size;
+    size_t size;
 } Node;
 
 /**
@@ -154,6 +154,11 @@ bool node_info(Node *node);
 bool node_free(Node *node);
 
 /**
+ * Counts the total of child nodes in `node` (doesn't count `node`).
+ */
+size_t node_total(Node *node);
+
+/**
  * Returns a NodePrintOpts with the defined default values:
  * 
  * By defining the implementation macros, the default values are:
@@ -196,7 +201,7 @@ static int _comp(const void *a, const void *b) {
 }
 
 Tree *tree_new(void *value) {
-    Tree *tree = (Tree *)malloc(sizeof(Tree));
+    Tree *tree = malloc(sizeof(Tree));
     if (!tree)
         THROW(NULL, "tree_new: malloc error on initialize root");
 
@@ -209,7 +214,7 @@ Tree *tree_new(void *value) {
 }
 
 Node *node_new(Node *parent, void *value) {
-    Node *node = (Node *)malloc(sizeof(Node));
+    Node *node = malloc(sizeof(Node));
     if (!node)
         THROW(NULL, "node_new: malloc error on initialize root");
 
@@ -226,7 +231,7 @@ bool node_new_child(Node *node, void *value) {
     if (!tmp)
         THROW(false, "node_new_child: realloc error");
 
-    node->nodes = (Node **)tmp;
+    node->nodes = tmp;
 
     Node *newNode = node_new(node, value);
     if (!newNode)
@@ -243,7 +248,7 @@ bool node_add_child(Node *parent, Node *child) {
     if (!tmp)
         THROW(false, "node_add_child: realloc error");
 
-    parent->nodes = (Node **)tmp;
+    parent->nodes = tmp;
     parent->nodes[parent->size] = child;
     parent->size++;
 
@@ -262,8 +267,8 @@ bool node_print(Node *node, NodePrintOpts opts) {
 
     size_t sizeofNode = sizeof(Node *);
 
-    Node **zero = (Node **) malloc(sizeofNode * node->size);
-    Node **nonZero = (Node **) malloc(sizeofNode * node->size);
+    Node **zero = malloc(sizeofNode * node->size);
+    Node **nonZero = malloc(sizeofNode * node->size);
 
     if (!zero || !nonZero) {
         free(zero);
@@ -348,23 +353,40 @@ bool node_info(Node *node) {
     return true;
 }
 
+size_t node_total(Node *node) {
+    size_t total = node->size;
+
+    for (size_t i = 0; i < node->size; i++)
+        total += node_total(node->nodes[i]);
+
+    return total;
+}
+
+// TODO it is assumed that value is a char* on the heap to use free
 bool node_free(Node *node) {
     if (!node)
         THROW(false, "node_free: node evaluates to false");
 
-    if (!node->nodes)
+    if (node->size && !node->nodes)
         THROW(false, "node_free: node->nodes evaluates to false");
 
-    for (size_t i = 0; i < node->size; i++) {
-        if (node->nodes[i]->size > 0) {
-            free(node->nodes[i]);
+    size_t size = node->size;
+
+    for (size_t i = size; i > 0; i--) {
+        if (node->nodes[i - 1]->size > 0) {
+            free(node->nodes[i - 1]->value);
+            free(node->nodes[i - 1]);
+            node->size--;
             continue;
         }
 
-        if (!node_free(node->nodes[i])) 
+        if (!node_free(node->nodes[i - 1])) 
             THROW(false, "node_free: recursion error");
+            
+        node->size--;
     }
 
+    free(node->value);
     free(node->nodes);
     free(node);
 

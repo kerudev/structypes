@@ -13,6 +13,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stddef.h>
+#include <ctype.h>
 
 /**
  * `strlen` replacement. Returns the size of `s`.
@@ -33,7 +34,7 @@ char *str_clone(char *s);
 
 /**
  * Obtains the character at `n`. Supports negative indexing.
- * Creates an internal copy of `str` so it isn't mutated.
+ * Creates a copy of `str` so it isn't mutated.
  *
  * Returns `\0` when:
  * - `n > str_len(str)`
@@ -52,7 +53,7 @@ char **str_split(char *str, const char *sep, size_t *total);
 
 /**
  * Splits `str` using the characters in `sep` and returns the first result.
- * Creates an internal copy of `str` so it isn't mutated.
+ * Creates a copy of `str` so it isn't mutated.
  *
  * Returns `NULL` when:
  * - `str_clone` fails to duplicate `str`.
@@ -63,7 +64,7 @@ char *str_split_first(char *str, const char *sep);
 
 /**
  * Splits `str` using the characters in `sep` and returns the last result.
- * Creates an internal copy of `str` so it isn't mutated.
+ * Creates a copy of `str` so it isn't mutated.
  *
  * Returns `NULL` when:
  * - `str_clone` fails to duplicate `str`.
@@ -94,6 +95,24 @@ char *str_concat(char **arr, size_t size);
  * - `malloc` or `realloc` fail.
  */
 char *str_concat_va(char *first, char *second, ...);
+
+/**
+ * Removes characters on the left side of `s` using `isspace`.
+ * Does not create a copy of `s`.
+ */
+char *str_ltrim(char *s);
+
+/**
+ * Removes characters on the right side of `s` using `isspace`.
+ * Does not create a copy of `s`.
+ */
+char *str_rtrim(char *s);
+
+/**
+ * Calls `str_rtrim`, then `str_ltrim`.
+ * Does not create a copy of `s`.
+ */
+char *str_trim(char *s);
 
 #endif // STR_H_
 
@@ -215,7 +234,6 @@ char *str_concat(char **arr, size_t size) {
     char *buf = malloc(str_len(arr[0]) + 1);
     if (!buf) THROW(NULL, "str_concat: malloc error");
 
-
     strcpy(buf, arr[0]);
 
     size_t total = str_len(buf);
@@ -265,6 +283,37 @@ char *str_concat_va(char *first, char *second, ...) {
     va_end(args);
 
     return buf;
+}
+
+char *str_join(char *joiner, ...) {
+    va_list args;
+    va_start(args, joiner);
+
+    va_end(args);
+
+    return str;
+}
+
+char *str_ltrim(char *s) {
+    while(isspace(*s)) s++;
+    return s;
+}
+
+char *str_rtrim(char *s) {
+    int len = str_len(s);
+    if (len == 0) return s;
+
+    char* back;
+    back = s + len - 1;
+
+    while (back >= s && isspace(*back)) back--;
+    *(back+1) = '\0';
+
+    return s;
+}
+
+char *str_trim(char *s) {
+    return str_ltrim(str_rtrim(s));
 }
 
 #endif // STR_IMPLEMENTATION

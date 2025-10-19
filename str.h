@@ -75,6 +75,18 @@ char *str_split_last(char *str, const char *sep);
 
 /**
  * Returns all strings in `arr` concatenated into one string.
+ *
+ * If you prefer to use a fixed-size array, consider using `str_concat_arr`.
+ * If you don't want to pass `size`, consider using `str_concat_va`.
+ *
+ * Returns `NULL` when:
+ * - `s1` or `s2` are `NULL`.
+ * - `realloc` fails.
+ */
+char *str_concat(char *s1, char *s2);
+
+/**
+ * Returns all strings in `arr` concatenated into one string.
  * `size` is the total of elements in `arr` and is needed to iterate it.
  *
  * If you don't want to pass `size`, consider using `str_concat_va`.
@@ -83,18 +95,31 @@ char *str_split_last(char *str, const char *sep);
  * - `arr` or `size` evaluate to false.
  * - `malloc` or `realloc` fail.
  */
-char *str_concat(char **arr, size_t size);
+char *str_concat_arr(char **arr, size_t size);
 
 /**
  * Returns all arguments concatenated into one string.
  *
  * Variadic arguments must end with `NULL` to stop iteration.
  *
+ * If you prefer to use a fixed-size array, consider using `str_concat_arr`.
+ *
  * Returns `NULL` when:
- * - `first` or `second` are `NULL`.
+ * - An error occurred when calling `str_concat`.
  * - `malloc` or `realloc` fail.
  */
-char *str_concat_va(char *first, char *second, ...);
+char *str_concat_va(char *s1, char *s2, ...);
+
+/**
+ * Returns a string that joins all arguments using `joiner`.
+ *
+ * Variadic arguments must end with `NULL` to stop iteration.
+ * 
+ * Returns `NULL` when:
+ * - `str_concat_va` fails to join `s1` and `s2`.
+ * - `str_concat_va` fails to join a variadic argument.
+ */
+char *str_join(char *joiner, char *s1, char *s2, ...);
 
 /**
  * Removes characters on the left side of `s` using `isspace`.
@@ -227,49 +252,53 @@ char *str_split_last(char *str, const char *sep) {
     return last;
 }
 
-char *str_concat(char **arr, size_t size) {
-    if (!arr) THROW(NULL, "str_concat: arr evaluates to false");
-    if (!size) THROW(NULL, "str_concat: size can't be 0");
+char *str_concat(char *s1, char *s2) {
+    if (s1 == NULL) THROW(NULL, "str_concat: s1 can't be NULL");
+    if (s2 == NULL) THROW(NULL, "str_concat: s2 can't be NULL");
 
-    char *buf = malloc(str_len(arr[0]) + 1);
-    if (!buf) THROW(NULL, "str_concat: malloc error");
+    size_t len = str_len(s1);
 
-    strcpy(buf, arr[0]);
+    char *buf = realloc(str_clone(s1), len + str_len(s2) + 1);
+    if (!buf) THROW(NULL, "str_append: realloc error");
 
-    size_t total = str_len(buf);
+    char *ptr = buf + len;
+
+    for (const char *cur = s2; *cur; cur++) *ptr++ = *cur;
+    *ptr = '\0';
+
+    return buf;
+}
+
+char *str_concat_arr(char **arr, size_t size) {
+    if (!arr) THROW(NULL, "str_concat_arr: arr evaluates to false");
+    if (!size) THROW(NULL, "str_concat_arr: size can't be 0");
+
+    char *buf = str_clone(arr[0]);
+    if (!buf) THROW(NULL, "str_concat_arr: malloc error");
+
     for (size_t i = 1; i < size; i++) {
-        size_t elementSize = str_len(arr[i]);
-
-        char *tmp = realloc(buf, total + elementSize + 1);
+        char *tmp = str_concat(buf, arr[i]);
         if (!tmp) {
             free(buf);
-            THROW(NULL, "str_concat: realloc error");
+            THROW(NULL, "str_concat_arr: realloc error");
         }
 
         buf = tmp;
-        strcat(buf, arr[i]);
-        total += elementSize;
     }
 
     return buf;
 }
 
-char *str_concat_va(char *first, char *second, ...) {
-    if (first == NULL) THROW(NULL, "str_concat_va: first can't be NULL");
-    if (second == NULL) THROW(NULL, "str_concat_va: second can't be NULL");
-
-    char *buf = malloc(str_len(first) + str_len(second) + 1);
-    if (!buf) THROW(NULL, "str_concat_va: malloc error");
-
-    strcpy(buf, first);
-    strcat(buf, second);
+char *str_concat_va(char *s1, char *s2, ...) {
+    char *buf = str_concat(s1, s2);
+    if (!buf) THROW(NULL, "str_concat_va: str_concat error");
 
     va_list args;
-    va_start(args, second);
+    va_start(args, s2);
 
     char *arg;
     while ((arg = va_arg(args, char *))) {
-        char *tmp = realloc(buf, str_len(buf) + str_len(arg) + 1);
+        char *tmp = str_concat(buf, arg);
         if (!tmp) {
             free(buf);
             va_end(args);
@@ -277,7 +306,6 @@ char *str_concat_va(char *first, char *second, ...) {
         }
 
         buf = tmp;
-        strcat(buf, arg);
     }
 
     va_end(args);
@@ -285,13 +313,28 @@ char *str_concat_va(char *first, char *second, ...) {
     return buf;
 }
 
-char *str_join(char *joiner, ...) {
+char *str_join(char *joiner, char *s1, char *s2, ...) {
     va_list args;
     va_start(args, joiner);
 
+    char *buf = str_concat_va(str_clone(s1), joiner, s2, NULL);
+    if (!buf) THROW(NULL, "str_join: str_concat_va failed to join s1 and s2");
+
+    char *arg;
+    while ((arg = va_arg(args, char *))) {
+        char *tmp = str_concat_va(buf, joiner, arg, NULL);
+        if (!tmp) {
+            free(buf);
+            va_end(args);
+            THROW(NULL, "str_join: str_concat_va failed to join with %s", arg);
+        }
+
+        buf = tmp;
+    }
+
     va_end(args);
 
-    return str;
+    return buf;
 }
 
 char *str_ltrim(char *s) {

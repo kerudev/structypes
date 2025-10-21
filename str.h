@@ -10,10 +10,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <ctype.h>
+
+// TODO replace strtok to get rid of this include
+#include <string.h>
 
 /**
  * `strlen` replacement. Returns the size of `s`.
@@ -178,14 +180,12 @@ char *str_clone(char *s) {
 }
 
 char str_char_at(char *str, int n) {
-    int size = (int)str_len(str);
+    int len = (int)str_len(str);
 
-    if (n > size)
-        THROW('\0', "str_char_at: Index %d out of bounds for string of size %zu\n", n, size);
+    if (abs(n) > len)
+        THROW('\0', "str_char_at: Index %d out of bounds for string of size %zu", n, len);
 
-    // TODO check for negative index overflow
-
-    return (n < 0) ? str[size + n] : str[n];
+    return (n < 0) ? str[len + n] : str[n];
 }
 
 char **str_split(char *str, const char *sep, size_t *total) {
@@ -315,7 +315,7 @@ char *str_concat_va(char *s1, char *s2, ...) {
 
 char *str_join(char *joiner, char *s1, char *s2, ...) {
     va_list args;
-    va_start(args, joiner);
+    va_start(args, s2);
 
     char *buf = str_concat_va(str_clone(s1), joiner, s2, NULL);
     if (!buf) THROW(NULL, "str_join: str_concat_va failed to join s1 and s2");

@@ -194,12 +194,11 @@ char **str_split(char *str, const char *sep, size_t *total) {
 
     char **tokens = NULL;
     size_t size = sizeof(char *);
-    // TODO cap -> total
-    size_t cap = 0;
+    *total = 0;
 
     char *token = strtok(tmp, sep);
     while (token) {
-        char **new_tokens = realloc(tokens, (cap + 1) * size);
+        char **new_tokens = realloc(tokens, (*total + 1) * size);
         if (!new_tokens) {
             free(tokens);
             free(tmp);
@@ -207,11 +206,10 @@ char **str_split(char *str, const char *sep, size_t *total) {
         }
 
         tokens = new_tokens;
-        tokens[cap++] = str_clone(token);
+        tokens[*total++] = str_clone(token);
         token = strtok(NULL, sep);
     }
 
-    *total = cap;
     return tokens;
 }
 

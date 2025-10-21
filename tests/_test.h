@@ -96,18 +96,22 @@ static bool _assert_arr(void *a1, size_t s1, void *a2, size_t s2, char *type) {
 }
 
 static int _test_suite(bool (**tests)(), size_t total) {
+    printf("running tests\n");
+    printf("----------------\n");
+
     for (size_t i = 0; i < total; i++) {
         // printf("%d\n", i);
         if (!tests[i]()) return 1;
         _test_ok();
     }
 
+    printf("----------------\n");
     printf("all tests passed\n");
     return 0;
 }
 
-#define ASSERT_BOOL(b, ...) ({ \
-    bool ok = _assert(b, ##__VA_ARGS__);    \
+#define ASSERT_BOOL(b1, b2, ...) ({ \
+    bool ok = _assert((b1 == b2), ##__VA_ARGS__);    \
     if (!in_assert_block) return ok;        \
     ok;                                     \
 })

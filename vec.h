@@ -77,7 +77,7 @@ bool vec_extend(Vec *dst, Vec *src);
  * Returns a pointer to the element at `index`.
  *
  * Returns `NULL` when:
- * - `index` is out of bounds 
+ * - `index` is out of bounds
  * - `v->size == 0`
  */
 void *vec_get(Vec *v, size_t index);
@@ -86,7 +86,7 @@ void *vec_get(Vec *v, size_t index);
  * Returns a pointer to the element's value at `index`.
  *
  * Returns `NULL` when:
- * - `index` is out of bounds 
+ * - `index` is out of bounds
  * - `v->size == 0`
  */
 void *vec_get_ptr(Vec *v, size_t index);
@@ -104,6 +104,14 @@ void *vec_get_ptr(Vec *v, size_t index);
  * - `v->size == 0`
  */
 bool vec_print(Vec *v);
+
+/**
+ * Prints the values of `offset`, `size` and `capacity` of `v`.
+ *
+ * Returns `false` when:
+ * - `v` evaluates to false.
+ */
+bool vec_info(Vec *v);
 
 #endif // VEC_H_
 
@@ -131,7 +139,7 @@ Vec *vec_new(size_t offset) {
     if (VEC_CAPACITY_STEP < 1)
         THROW(NULL, "vec_new: VEC_CAPACITY_STEP must be 1 or greater");
 
-    Vec *v = (Vec *)malloc(sizeof(Vec));
+    Vec *v = malloc(sizeof(Vec));
     if (!v)
         THROW(NULL, "vec_new: malloc error on initialize vector");
 
@@ -177,13 +185,8 @@ bool vec_push(Vec *v, void *item) {
         v->items = tmp;
     }
 
-    memcpy(
-        (char *)v->items + v->size * v->offset,
-        item,
-        v->offset
-    );
-
-    v->size++;
+    void **array = (void**)v->items;
+    array[v->size++] = item;
 
     return true;
 }
@@ -236,7 +239,17 @@ bool vec_print(Vec *v) {
         THROW(false, "vec_print: vector is uninitialized");
 
     for (size_t i = 0; i < v->size; i++)
-        printf("%d %s\n", i, *(char **)vec_get(v, i));
+        printf("%zu %s\n", i, *(char **)vec_get(v, i));
+
+    return true;
+}
+
+bool vec_info(Vec *v) {
+    if (!v) THROW(false, "vec_info: v evaluates to false");
+
+    printf("offset:   %zu\n", v->offset);
+    printf("size:     %zu\n", v->size);
+    printf("capacity: %zu\n", v->capacity);
 
     return true;
 }

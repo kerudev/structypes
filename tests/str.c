@@ -66,7 +66,7 @@ bool str_clone_err_s_is_empty() {
     TEST("str_clone_err_s_is_empty");
 
     char *s = "";
-    
+
     char *result = str_clone(s);
     char *expected = "";
 
@@ -77,7 +77,7 @@ bool str_clone_err_s_is_null() {
     TEST("str_clone_err_s_is_null");
 
     char *s = NULL;
-    
+
     char *result = str_clone(s);
     char *expected = NULL;
 
@@ -306,6 +306,66 @@ bool str_concat_err_s2_is_null() {
     ASSERT_BOOL(result, expected);
 }
 
+bool str_concat_arr_ok() {
+    TEST("str_concat_arr_ok");
+
+    char *arr = {"ab", "cd", "ef"};
+    size_t size = 3;
+
+    char *result = str_concat_arr(arr, size);
+    char *expected = "abcdef";
+
+    ASSERT_BOOL(result, expected);
+}
+
+bool str_concat_arr_err_arr_is_null() {
+    TEST("str_concat_arr_err_arr_is_null");
+
+    char *arr = NULL;
+    size_t size = 3;
+
+    char *result = str_concat_arr(arr, size);
+    char *expected = "abcdef";
+
+    ASSERT_BOOL(result, expected);
+}
+
+bool str_concat_arr_err_size_is_zero() {
+    TEST("str_concat_arr_err_size_is_zero");
+
+    char *arr = {"ab", "cd", "ef"};
+    size_t size = 0;
+
+    char *result = str_concat_arr(arr, size);
+    char *expected = "abcdef";
+
+    ASSERT_BOOL(result, expected);
+}
+
+bool str_concat_arr_err_arr_first_is_null() {
+    TEST("str_concat_arr_err_arr_first_is_null");
+
+    char *arr = {NULL, "cd", "ef"};
+    size_t size = 3;
+
+    char *result = str_concat_arr(arr, size);
+    char *expected = "abcdef";
+
+    ASSERT_BOOL(result, expected);
+}
+
+bool str_concat_arr_err_arr_other_is_null() {
+    TEST("str_concat_arr_err_arr_other_is_null");
+
+    char *arr = {"ab", NULL, "ef"};
+    size_t size = 3;
+
+    char *result = str_concat_arr(arr, size);
+    char *expected = "abcdef";
+
+    ASSERT_BOOL(result, expected);
+}
+
 int main() {
     TEST_SUITE(
         // str_len
@@ -325,7 +385,7 @@ int main() {
         str_char_at_ok_negative_index,
         str_char_at_err_positive_index_oob,
         str_char_at_err_negative_index_oob,
-        
+
         // str_split
         str_split_ok_one_item,
         str_split_ok_many_items,
@@ -346,5 +406,12 @@ int main() {
         str_concat_ok_stack_strings,
         str_concat_err_s1_is_null,
         str_concat_err_s2_is_null,
+
+        // str_concat_arr
+        str_concat_arr_ok,
+        str_concat_arr_err_arr_is_null,
+        str_concat_arr_err_size_is_zero,
+        str_concat_arr_err_arr_first_is_null,
+        str_concat_arr_err_arr_other_is_null,
     );
 }

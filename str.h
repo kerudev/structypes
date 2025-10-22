@@ -19,7 +19,7 @@
 
 /**
  * `strlen` replacement. Returns the size of `s`.
- * 
+ *
  * Returns `0` when:
  * - `s` evaluates to false.
  */
@@ -27,7 +27,7 @@ size_t str_len(char *s);
 
 /**
  * `strdup` replacement. Returns a clone of `s`.
- * 
+ *
  * Returns `NULL` when:
  * - `s` evaluates to false.
  * - `malloc` fails.
@@ -116,7 +116,7 @@ char *str_concat_va(char *s1, char *s2, ...);
  * Returns a string that joins all arguments using `joiner`.
  *
  * Variadic arguments must end with `NULL` to stop iteration.
- * 
+ *
  * Returns `NULL` when:
  * - `str_concat_va` fails to join `s1` and `s2`.
  * - `str_concat_va` fails to join a variadic argument.
@@ -189,12 +189,13 @@ char str_char_at(char *str, int n) {
 }
 
 char **str_split(char *str, const char *sep, size_t *total) {
+    *total = 0;
+
     char *tmp = str_clone(str);
     if (tmp == NULL) THROW(NULL, "str_split: error cloning str");
 
     char **tokens = NULL;
     size_t size = sizeof(char *);
-    *total = 0;
 
     char *token = strtok(tmp, sep);
     while (token) {
@@ -206,9 +207,11 @@ char **str_split(char *str, const char *sep, size_t *total) {
         }
 
         tokens = new_tokens;
-        tokens[*total++] = str_clone(token);
+        tokens[(*total)++] = str_clone(token);
         token = strtok(NULL, sep);
     }
+
+    free(tmp);
 
     return tokens;
 }

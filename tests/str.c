@@ -309,23 +309,23 @@ bool str_concat_err_s2_is_null() {
 bool str_concat_arr_ok() {
     TEST("str_concat_arr_ok");
 
-    char *arr = {"ab", "cd", "ef"};
+    char *arr[] = {"ab", "cd", "ef"};
     size_t size = 3;
 
     char *result = str_concat_arr(arr, size);
     char *expected = "abcdef";
 
-    ASSERT_BOOL(result, expected);
+    ASSERT_STR(result, expected);
 }
 
 bool str_concat_arr_err_arr_is_null() {
     TEST("str_concat_arr_err_arr_is_null");
 
-    char *arr = NULL;
+    char **arr = NULL;
     size_t size = 3;
 
     char *result = str_concat_arr(arr, size);
-    char *expected = "abcdef";
+    char *expected = NULL;
 
     ASSERT_BOOL(result, expected);
 }
@@ -333,11 +333,11 @@ bool str_concat_arr_err_arr_is_null() {
 bool str_concat_arr_err_size_is_zero() {
     TEST("str_concat_arr_err_size_is_zero");
 
-    char *arr = {"ab", "cd", "ef"};
+    char *arr[] = {"ab", "cd", "ef"};
     size_t size = 0;
 
     char *result = str_concat_arr(arr, size);
-    char *expected = "abcdef";
+    char *expected = NULL;
 
     ASSERT_BOOL(result, expected);
 }
@@ -345,11 +345,11 @@ bool str_concat_arr_err_size_is_zero() {
 bool str_concat_arr_err_arr_first_is_null() {
     TEST("str_concat_arr_err_arr_first_is_null");
 
-    char *arr = {NULL, "cd", "ef"};
+    char *arr[] = {NULL, "cd", "ef"};
     size_t size = 3;
 
     char *result = str_concat_arr(arr, size);
-    char *expected = "abcdef";
+    char *expected = NULL;
 
     ASSERT_BOOL(result, expected);
 }
@@ -357,11 +357,29 @@ bool str_concat_arr_err_arr_first_is_null() {
 bool str_concat_arr_err_arr_other_is_null() {
     TEST("str_concat_arr_err_arr_other_is_null");
 
-    char *arr = {"ab", NULL, "ef"};
+    char *arr[] = {"ab", NULL, "ef"};
     size_t size = 3;
 
     char *result = str_concat_arr(arr, size);
+    char *expected = NULL;
+
+    ASSERT_BOOL(result, expected);
+}
+
+bool str_concat_va_ok() {
+    TEST("str_concat_va_ok");
+
+    char *result = str_concat_va("ab", "cd", "ef", NULL);
     char *expected = "abcdef";
+
+    ASSERT_STR(result, expected);
+}
+
+bool str_concat_va_err_first_concat_err() {
+    TEST("str_concat_va_err_first_concat_err");
+
+    char *result = str_concat_va("ab", NULL, "ef");
+    char *expected = NULL;
 
     ASSERT_BOOL(result, expected);
 }
@@ -413,5 +431,9 @@ int main() {
         str_concat_arr_err_size_is_zero,
         str_concat_arr_err_arr_first_is_null,
         str_concat_arr_err_arr_other_is_null,
+
+        // str_concat_va
+        str_concat_va_ok,
+        str_concat_va_err_first_concat_err,
     );
 }

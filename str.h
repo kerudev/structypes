@@ -95,7 +95,6 @@ char *str_concat(char *s1, char *s2);
  *
  * Returns `NULL` when:
  * - `arr` or `size` evaluate to false.
- * - `malloc` or `realloc` fail.
  */
 char *str_concat_arr(char **arr, size_t size);
 
@@ -108,7 +107,6 @@ char *str_concat_arr(char **arr, size_t size);
  *
  * Returns `NULL` when:
  * - An error occurred when calling `str_concat`.
- * - `malloc` or `realloc` fail.
  */
 char *str_concat_va(char *s1, char *s2, ...);
 
@@ -281,7 +279,7 @@ char *str_concat_arr(char **arr, size_t size) {
         char *tmp = str_concat(buf, arr[i]);
         if (!tmp) {
             free(buf);
-            THROW(NULL, "str_concat_arr: realloc error");
+            THROW(NULL, "str_concat_arr: str_concat error on loop");
         }
 
         buf = tmp;
@@ -303,7 +301,7 @@ char *str_concat_va(char *s1, char *s2, ...) {
         if (!tmp) {
             free(buf);
             va_end(args);
-            THROW(NULL, "str_concat_va: realloc error");
+            THROW(NULL, "str_concat_va: str_concat error on loop");
         }
 
         buf = tmp;

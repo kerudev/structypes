@@ -384,6 +384,129 @@ bool str_concat_va_err_first_concat_err() {
     ASSERT_BOOL(result, expected);
 }
 
+bool str_join_ok() {
+    TEST("str_join_ok");
+
+    char *result = str_join("/", "ab", "cd", "ef", NULL);
+    char *expected = "ab/cd/ef";
+
+    ASSERT_STR(result, expected);
+}
+
+bool str_join_err_joiner_is_null() {
+    TEST("str_join_err_joiner_is_null");
+
+    char *result = str_join(NULL, "ab", "cd", "ef", NULL);
+    char *expected = NULL;
+
+    ASSERT_BOOL(result, expected);
+}
+
+bool str_join_err_s1_is_null() {
+    TEST("str_join_err_s1_is_null");
+
+    char *result = str_join("/", NULL, "cd", "ef", NULL);
+    char *expected = NULL;
+
+    ASSERT_BOOL(result, expected);
+}
+
+bool str_join_err_s2_is_null() {
+    TEST("str_join_err_s2_is_null");
+
+    char *result = str_join("/", "ab", NULL, "ef", NULL);
+    char *expected = NULL;
+
+    ASSERT_BOOL(result, expected);
+}
+
+bool str_ltrim_ok() {
+    TEST("str_ltrim_ok");
+
+    char *s = str_clone("  abc  ");
+
+    char *result = str_ltrim(s);
+    char *expected = "abc  ";
+
+    ASSERT_STR(result, expected);
+}
+
+bool str_ltrim_ok_s_is_empty() {
+    TEST("str_ltrim_ok_s_is_empty");
+
+    char *result = str_ltrim("");
+    char *expected = "";
+
+    ASSERT_STR(result, expected);
+}
+
+bool str_ltrim_err_s_is_null() {
+    TEST("str_ltrim_err_s_is_null");
+
+    char *result = str_ltrim(NULL);
+    char *expected = NULL;
+
+    ASSERT_BOOL(result, expected);
+}
+
+bool str_rtrim_ok() {
+    TEST("str_rtrim_ok");
+
+    char *s = str_clone("  abc  ");
+
+    char *result = str_rtrim(s);
+    char *expected = "  abc";
+
+    ASSERT_STR(result, expected);
+}
+
+bool str_rtrim_ok_s_is_empty() {
+    TEST("str_rtrim_ok_s_is_empty");
+
+    char *result = str_rtrim("");
+    char *expected = "";
+
+    ASSERT_STR(result, expected);
+}
+
+bool str_rtrim_err_s_is_null() {
+    TEST("str_rtrim_err_s_is_null");
+
+    char *result = str_rtrim(NULL);
+    char *expected = NULL;
+
+    ASSERT_BOOL(result, expected);
+}
+
+bool str_trim_ok() {
+    TEST("str_trim_ok");
+
+    char *s = str_clone("  abc  ");
+
+    char *result = str_trim(s);
+    char *expected = "abc";
+
+    ASSERT_STR(result, expected);
+}
+
+bool str_trim_ok_s_is_empty() {
+    TEST("str_trim_ok_s_is_empty");
+
+    char *result = str_trim("");
+    char *expected = "";
+
+    ASSERT_STR(result, expected);
+}
+
+bool str_trim_err_s_is_null() {
+    TEST("str_trim_err_s_is_null");
+
+    char *result = str_trim(NULL);
+    char *expected = NULL;
+
+    ASSERT_BOOL(result, expected);
+}
+
 int main() {
     TEST_SUITE(
         // str_len
@@ -435,5 +558,26 @@ int main() {
         // str_concat_va
         str_concat_va_ok,
         str_concat_va_err_first_concat_err,
+
+        // str_join
+        str_join_ok,
+        str_join_err_joiner_is_null,
+        str_join_err_s1_is_null,
+        str_join_err_s2_is_null,
+
+        // str_ltrim
+        str_ltrim_ok,
+        str_ltrim_ok_s_is_empty,
+        str_ltrim_err_s_is_null,
+
+        // str_rtrim
+        str_rtrim_ok,
+        str_rtrim_ok_s_is_empty,
+        str_rtrim_err_s_is_null,
+
+        // str_trim
+        str_trim_ok,
+        str_trim_ok_s_is_empty,
+        str_trim_err_s_is_null,
     );
 }

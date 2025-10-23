@@ -40,6 +40,7 @@ static bool _assert(bool b, ...) {
         va_start(args, b);
 
         char *msg = va_arg(args, char *);
+        if (!msg) msg = str_clone("assertion failed");
         _test_err(msg, args);
 
         va_end(args);
@@ -121,7 +122,7 @@ static int _test_suite(bool (**tests)(), size_t total) {
     if (!failed_tests->size) {
         printf("all tests passed\n");
     } else {
-        printf("the following tests failed\n");        
+        printf("the following tests failed\n");
         vec_print(failed_tests);
     }
 

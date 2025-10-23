@@ -116,6 +116,7 @@ char *str_concat_va(char *s1, char *s2, ...);
  * Variadic arguments must end with `NULL` to stop iteration.
  *
  * Returns `NULL` when:
+ * - `joiner`, `s1` or `s2` are `NULL`.
  * - `str_concat_va` fails to join `s1` and `s2`.
  * - `str_concat_va` fails to join a variadic argument.
  */
@@ -124,18 +125,27 @@ char *str_join(char *joiner, char *s1, char *s2, ...);
 /**
  * Removes characters on the left side of `s` using `isspace`.
  * Does not create a copy of `s`.
+ * 
+ * Returns `NULL` when:
+ * - `s` is `NULL`
  */
 char *str_ltrim(char *s);
 
 /**
  * Removes characters on the right side of `s` using `isspace`.
  * Does not create a copy of `s`.
+ * 
+ * Returns `NULL` when:
+ * - `s` is `NULL`
  */
 char *str_rtrim(char *s);
 
 /**
  * Calls `str_rtrim`, then `str_ltrim`.
  * Does not create a copy of `s`.
+ * 
+ * Returns `NULL` when:
+ * - `s` is `NULL`
  */
 char *str_trim(char *s);
 
@@ -313,6 +323,10 @@ char *str_concat_va(char *s1, char *s2, ...) {
 }
 
 char *str_join(char *joiner, char *s1, char *s2, ...) {
+    if (!joiner) THROW(NULL, "str_join: joiner evaluates to false");
+    if (!s1) THROW(NULL, "str_join: s1 evaluates to false");
+    if (!s2) THROW(NULL, "str_join: s2 evaluates to false");
+
     va_list args;
     va_start(args, s2);
 
@@ -337,11 +351,14 @@ char *str_join(char *joiner, char *s1, char *s2, ...) {
 }
 
 char *str_ltrim(char *s) {
+    if (s == NULL) THROW(NULL, "str_ltrim: s can't be NULL");
     while(isspace(*s)) s++;
     return s;
 }
 
 char *str_rtrim(char *s) {
+    if (s == NULL) THROW(NULL, "str_rtrim: s can't be NULL");
+
     int len = str_len(s);
     if (len == 0) return s;
 
@@ -355,6 +372,7 @@ char *str_rtrim(char *s) {
 }
 
 char *str_trim(char *s) {
+    if (s == NULL) THROW(NULL, "str_trim: s can't be NULL");
     return str_ltrim(str_rtrim(s));
 }
 

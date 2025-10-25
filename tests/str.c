@@ -5,7 +5,6 @@
 #include "../str.h"
 
 // TODO free memory on tests
-// TODO finish tests for all functions
 
 bool str_len_ok() {
     TEST("str_len_ok");
@@ -255,13 +254,13 @@ bool str_split_last_err_no_token() {
     ASSERT_BOOL(result, expected);
 }
 
-bool str_concat_ok_heap_strings() {
-    TEST("str_concat_ok");
+bool __str_concat_ok_heap_strings() {
+    TEST("__str_concat_ok_heap_strings");
 
     char *s1 = str_clone("abc");
     char *s2 = str_clone("def");
 
-    char *result = str_concat(s1, s2);
+    char *result = __str_concat(s1, s2);
     char *expected = "abcdef";
 
     free(s1);
@@ -270,37 +269,37 @@ bool str_concat_ok_heap_strings() {
     ASSERT_STR(result, expected);
 }
 
-bool str_concat_ok_stack_strings() {
-    TEST("str_concat_ok");
+bool __str_concat_ok_stack_strings() {
+    TEST("__str_concat_ok_stack_strings");
 
     char *s1 = "abc";
     char *s2 = "def";
 
-    char *result = str_concat(s1, s2);
+    char *result = __str_concat(s1, s2);
     char *expected = "abcdef";
 
     ASSERT_STR(result, expected);
 }
 
-bool str_concat_err_s1_is_null() {
-    TEST("str_concat_err_s1_is_null");
+bool __str_concat_err_s1_is_null() {
+    TEST("__str_concat_err_s1_is_null");
 
     char *s1 = NULL;
     char *s2 = "def";
 
-    char *result = str_concat(s1, s2);
+    char *result = __str_concat(s1, s2);
     char *expected = NULL;
 
     ASSERT_BOOL(result, expected);
 }
 
-bool str_concat_err_s2_is_null() {
-    TEST("str_concat_err_s2_is_null");
+bool __str_concat_err_s2_is_null() {
+    TEST("__str_concat_err_s2_is_null");
 
     char *s1 = "abc";
     char *s2 = NULL;
 
-    char *result = str_concat(s1, s2);
+    char *result = __str_concat(s1, s2);
     char *expected = NULL;
 
     ASSERT_BOOL(result, expected);
@@ -366,19 +365,67 @@ bool str_concat_arr_err_arr_other_is_null() {
     ASSERT_BOOL(result, expected);
 }
 
-bool str_concat_va_ok() {
-    TEST("str_concat_va_ok");
+bool str_concat_ok() {
+    TEST("str_concat_ok");
 
-    char *result = str_concat_va("ab", "cd", "ef", NULL);
+    char *result = str_concat("ab", "cd", "ef");
     char *expected = "abcdef";
 
     ASSERT_STR(result, expected);
 }
 
-bool str_concat_va_err_first_concat_err() {
-    TEST("str_concat_va_err_first_concat_err");
+bool str_concat_err_first_concat_err() {
+    TEST("str_concat_err_first_concat_err");
 
-    char *result = str_concat_va("ab", NULL, "ef");
+    char *result = str_concat("ab", NULL, "ef");
+    char *expected = NULL;
+
+    ASSERT_BOOL(result, expected);
+}
+
+bool str_join_arr_ok() {
+    TEST("str_join_arr_ok");
+
+    char *arr[] = {"ab", "cd", "ef"};
+    size_t size = 3;
+
+    char *result = str_join_arr("/", arr, size);
+    char *expected = "ab/cd/ef";
+
+    ASSERT_STR(result, expected);
+}
+
+bool str_join_arr_err_joiner_is_null() {
+    TEST("str_join_arr_err_joiner_is_null");
+
+    char *arr[] = { "ab", "cd", "ef"};
+    size_t size = 3;
+
+    char *result = str_join_arr(NULL, arr, size);
+    char *expected = NULL;
+
+    ASSERT_BOOL(result, expected);
+}
+
+bool str_join_arr_err_s1_is_null() {
+    TEST("str_join_arr_err_s1_is_null");
+
+    char *arr[] = {NULL, "cd", "ef"};
+    size_t size = 3;
+
+    char *result = str_join_arr("/", arr, size);
+    char *expected = NULL;
+
+    ASSERT_BOOL(result, expected);
+}
+
+bool str_join_arr_err_s2_is_null() {
+    TEST("str_join_arr_err_s2_is_null");
+
+    char *arr[] = {"ab", NULL, "ef"};
+    size_t size = 3;
+
+    char *result = str_join_arr("/", arr, size);
     char *expected = NULL;
 
     ASSERT_BOOL(result, expected);
@@ -387,7 +434,7 @@ bool str_concat_va_err_first_concat_err() {
 bool str_join_ok() {
     TEST("str_join_ok");
 
-    char *result = str_join("/", "ab", "cd", "ef", NULL);
+    char *result = str_join("/", "ab", "cd", "ef");
     char *expected = "ab/cd/ef";
 
     ASSERT_STR(result, expected);
@@ -396,7 +443,7 @@ bool str_join_ok() {
 bool str_join_err_joiner_is_null() {
     TEST("str_join_err_joiner_is_null");
 
-    char *result = str_join(NULL, "ab", "cd", "ef", NULL);
+    char *result = str_join(NULL, "ab", "cd", "ef");
     char *expected = NULL;
 
     ASSERT_BOOL(result, expected);
@@ -405,7 +452,7 @@ bool str_join_err_joiner_is_null() {
 bool str_join_err_s1_is_null() {
     TEST("str_join_err_s1_is_null");
 
-    char *result = str_join("/", NULL, "cd", "ef", NULL);
+    char *result = str_join("/", NULL, "cd", "ef");
     char *expected = NULL;
 
     ASSERT_BOOL(result, expected);
@@ -414,7 +461,7 @@ bool str_join_err_s1_is_null() {
 bool str_join_err_s2_is_null() {
     TEST("str_join_err_s2_is_null");
 
-    char *result = str_join("/", "ab", NULL, "ef", NULL);
+    char *result = str_join("/", "ab", NULL, "ef");
     char *expected = NULL;
 
     ASSERT_BOOL(result, expected);
@@ -542,11 +589,11 @@ int main() {
         str_split_last_err_str_is_null,
         str_split_last_err_no_token,
 
-        // str_concat
-        str_concat_ok_heap_strings,
-        str_concat_ok_stack_strings,
-        str_concat_err_s1_is_null,
-        str_concat_err_s2_is_null,
+        // __str_concat
+        __str_concat_ok_heap_strings,
+        __str_concat_ok_stack_strings,
+        __str_concat_err_s1_is_null,
+        __str_concat_err_s2_is_null,
 
         // str_concat_arr
         str_concat_arr_ok,
@@ -555,9 +602,11 @@ int main() {
         str_concat_arr_err_arr_first_is_null,
         str_concat_arr_err_arr_other_is_null,
 
-        // str_concat_va
-        str_concat_va_ok,
-        str_concat_va_err_first_concat_err,
+        // str_join_arr
+        str_join_arr_ok,
+        str_join_arr_err_joiner_is_null,
+        str_join_arr_err_s1_is_null,
+        str_join_arr_err_s2_is_null,
 
         // str_join
         str_join_ok,

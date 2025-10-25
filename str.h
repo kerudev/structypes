@@ -4,6 +4,10 @@
 // - STRUCTYPES_IMPLEMENTATION: defines all of structype's implementations.
 // - STRUCTYPES_DEBUG: if defined, prints error messages.
 // - STR_IMPLEMENTATION: implementations of string functions.
+//
+// Function macros:
+// - str_concat
+// - str_join
 
 #ifndef STR_H_
 #define STR_H_
@@ -76,22 +80,22 @@ char *str_split_first(char *str, const char *sep);
 char *str_split_last(char *str, const char *sep);
 
 /**
- * Returns all strings in `arr` concatenated into one string.
+ * Returns `s1` and `s1` concatenated into one string.
  *
- * If you prefer to use a fixed-size array, consider using `str_concat_arr`.
- * If you don't want to pass `size`, consider using `str_concat_va`.
+ * This function is not meant to be called directly, but by other functions in
+ * the str_concat family.
  *
  * Returns `NULL` when:
  * - `s1` or `s2` are `NULL`.
  * - `realloc` fails.
  */
-char *str_concat(char *s1, char *s2);
+char *__str_concat(char *s1, char *s2);
 
 /**
  * Returns all strings in `arr` concatenated into one string.
  * `size` is the total of elements in `arr` and is needed to iterate it.
  *
- * If you don't want to pass `size`, consider using `str_concat_va`.
+ * If you don't want to pass `size`, consider using `str_concat`.
  *
  * Returns `NULL` when:
  * - `arr` or `size` evaluate to false.
@@ -99,33 +103,18 @@ char *str_concat(char *s1, char *s2);
 char *str_concat_arr(char **arr, size_t size);
 
 /**
- * Returns all arguments concatenated into one string.
- *
- * Variadic arguments must end with `NULL` to stop iteration.
- *
- * If you prefer to use a fixed-size array, consider using `str_concat_arr`.
+ * Returns a string that joins all elements in `arr` using `joiner`.
  *
  * Returns `NULL` when:
- * - An error occurred when calling `str_concat`.
+ * - `joiner`, `arr` or `size` evaluate to false.
+ * - `str_concat` fails to join `s1` and `s2`.
  */
-char *str_concat_va(char *s1, char *s2, ...);
-
-/**
- * Returns a string that joins all arguments using `joiner`.
- *
- * Variadic arguments must end with `NULL` to stop iteration.
- *
- * Returns `NULL` when:
- * - `joiner`, `s1` or `s2` are `NULL`.
- * - `str_concat_va` fails to join `s1` and `s2`.
- * - `str_concat_va` fails to join a variadic argument.
- */
-char *str_join(char *joiner, char *s1, char *s2, ...);
+char *str_join_arr(char *joiner, char **arr, size_t size);
 
 /**
  * Removes characters on the left side of `s` using `isspace`.
  * Does not create a copy of `s`.
- * 
+ *
  * Returns `NULL` when:
  * - `s` is `NULL`
  */
@@ -134,7 +123,7 @@ char *str_ltrim(char *s);
 /**
  * Removes characters on the right side of `s` using `isspace`.
  * Does not create a copy of `s`.
- * 
+ *
  * Returns `NULL` when:
  * - `s` is `NULL`
  */
@@ -143,7 +132,7 @@ char *str_rtrim(char *s);
 /**
  * Calls `str_rtrim`, then `str_ltrim`.
  * Does not create a copy of `s`.
- * 
+ *
  * Returns `NULL` when:
  * - `s` is `NULL`
  */
@@ -261,14 +250,14 @@ char *str_split_last(char *str, const char *sep) {
     return last;
 }
 
-char *str_concat(char *s1, char *s2) {
-    if (s1 == NULL) THROW(NULL, "str_concat: s1 can't be NULL");
-    if (s2 == NULL) THROW(NULL, "str_concat: s2 can't be NULL");
+char *__str_concat(char *s1, char *s2) {
+    if (s1 == NULL) THROW(NULL, "__str_concat: s1 can't be NULL");
+    if (s2 == NULL) THROW(NULL, "__str_concat: s2 can't be NULL");
 
     size_t len = str_len(s1);
 
     char *buf = realloc(str_clone(s1), len + str_len(s2) + 1);
-    if (!buf) THROW(NULL, "str_append: realloc error");
+    if (!buf) THROW(NULL, "__str_concat: realloc error");
 
     char *ptr = buf + len;
 
@@ -283,13 +272,13 @@ char *str_concat_arr(char **arr, size_t size) {
     if (!size) THROW(NULL, "str_concat_arr: size can't be 0");
 
     char *buf = str_clone(arr[0]);
-    if (!buf) THROW(NULL, "str_concat_arr: malloc error");
+    if (!buf) THROW(NULL, "str_concat_arr: str_clone failed");
 
     for (size_t i = 1; i < size; i++) {
-        char *tmp = str_concat(buf, arr[i]);
+        char *tmp = __str_concat(buf, arr[i]);
         if (!tmp) {
             free(buf);
-            THROW(NULL, "str_concat_arr: str_concat error on loop");
+            THROW(NULL, "str_concat_arr: __str_concat error on loop");
         }
 
         buf = tmp;
@@ -298,57 +287,33 @@ char *str_concat_arr(char **arr, size_t size) {
     return buf;
 }
 
-char *str_concat_va(char *s1, char *s2, ...) {
-    char *buf = str_concat(s1, s2);
-    if (!buf) THROW(NULL, "str_concat_va: str_concat error");
+#define str_concat(...) \
+    str_concat_arr((char *[]){ __VA_ARGS__ }, sizeof((char *[]){ __VA_ARGS__ }) / sizeof(char *));
 
-    va_list args;
-    va_start(args, s2);
+char *str_join_arr(char *joiner, char **arr, size_t size) {
+    if (!joiner) THROW(NULL, "str_join_arr: joiner evaluates to false");
+    if (!arr) THROW(NULL, "str_join_arr: arr evaluates to false");
+    if (!size) THROW(NULL, "str_join_arr: size can't be 0");
+
+    char *buf = str_clone(arr[0]);
+    if (!buf) THROW(NULL, "str_join_arr: str_clone failed");
 
     char *arg;
-    while ((arg = va_arg(args, char *))) {
-        char *tmp = str_concat(buf, arg);
+    for (size_t i = 1; i < size; i++) {
+        char *tmp = str_concat(buf, joiner, arr[i]);
         if (!tmp) {
             free(buf);
-            va_end(args);
-            THROW(NULL, "str_concat_va: str_concat error on loop");
+            THROW(NULL, "str_join_arr: str_concat failed to join with %s", arg);
         }
 
         buf = tmp;
     }
 
-    va_end(args);
-
     return buf;
 }
 
-char *str_join(char *joiner, char *s1, char *s2, ...) {
-    if (!joiner) THROW(NULL, "str_join: joiner evaluates to false");
-    if (!s1) THROW(NULL, "str_join: s1 evaluates to false");
-    if (!s2) THROW(NULL, "str_join: s2 evaluates to false");
-
-    va_list args;
-    va_start(args, s2);
-
-    char *buf = str_concat_va(str_clone(s1), joiner, s2, NULL);
-    if (!buf) THROW(NULL, "str_join: str_concat_va failed to join s1 and s2");
-
-    char *arg;
-    while ((arg = va_arg(args, char *))) {
-        char *tmp = str_concat_va(buf, joiner, arg, NULL);
-        if (!tmp) {
-            free(buf);
-            va_end(args);
-            THROW(NULL, "str_join: str_concat_va failed to join with %s", arg);
-        }
-
-        buf = tmp;
-    }
-
-    va_end(args);
-
-    return buf;
-}
+#define str_join(joiner, ...) \
+    str_join_arr(joiner, (char *[]){ __VA_ARGS__ }, sizeof((char *[]){ __VA_ARGS__ }) / sizeof(char *));
 
 char *str_ltrim(char *s) {
     if (s == NULL) THROW(NULL, "str_ltrim: s can't be NULL");

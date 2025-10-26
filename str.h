@@ -22,7 +22,9 @@
 #include <string.h>
 
 /**
- * `strlen` replacement. Returns the size of `s`.
+ * `strlen` replacement.
+ * 
+ * Returns the size of `s`.
  *
  * Returns `0` when:
  * - `s` evaluates to false.
@@ -30,7 +32,9 @@
 size_t str_len(char *s);
 
 /**
- * `strdup` replacement. Returns a clone of `s`.
+ * `strdup` replacement.
+ * 
+ * Returns a clone of `s`.
  *
  * Returns `NULL` when:
  * - `s` evaluates to false.
@@ -99,6 +103,7 @@ char *__str_concat(char *s1, char *s2);
  *
  * Returns `NULL` when:
  * - `arr` or `size` evaluate to false.
+ * - `str_clone` or `__str_concat` fail.
  */
 char *str_concat_arr(char **arr, size_t size);
 
@@ -107,7 +112,7 @@ char *str_concat_arr(char **arr, size_t size);
  *
  * Returns `NULL` when:
  * - `joiner`, `arr` or `size` evaluate to false.
- * - `str_concat` fails to join `s1` and `s2`.
+ * - `str_clone` or `__str_concat` fail.
  */
 char *str_join_arr(char *joiner, char **arr, size_t size);
 
@@ -137,6 +142,46 @@ char *str_rtrim(char *s);
  * - `s` is `NULL`
  */
 char *str_trim(char *s);
+
+/**
+ * Returns a boolean value indicating whether `s1` is the same as `s2`.
+ *
+ * Returns `false` when:
+ * - `s1` is `NULL`
+ * - `s2` is `NULL`
+ */
+bool str_eq(char *s1, char *s2);
+
+/**
+ * `strcmp` replacement.
+ *
+ * Returns the lexicographical difference of `s1` and `s2`.
+ *
+ * It has some slight differences with `strcmp`:
+ * - `strcmp` segfaults if `s1` or `s2` are NULL.
+ *   `str_diff` will return -1 so you can handle this case.
+ *
+ * - `strcmp` and `str_diff` return different values when using the same
+ *   parameters. This is because `str_diff` returns the real difference of the
+ *   compared character pair.
+ *
+ *   For example:
+ *   - `strcmp("abc", "def") == -1`
+ *   - `str_diff("abc", "def") == -3`
+ *
+ * Returns `-1` when:
+ * - `s1` is `NULL`
+ * - `s2` is `NULL`
+ */
+int str_diff(char *s1, char *s2);
+
+/**
+ * Prints `s`, its `length` and whether `s` is null-terminated.
+ *
+ * Returns `false` when:
+ * - `s` is `NULL`.
+ */
+bool str_info(char *s);
 
 #endif // STR_H_
 
@@ -298,12 +343,11 @@ char *str_join_arr(char *joiner, char **arr, size_t size) {
     char *buf = str_clone(arr[0]);
     if (!buf) THROW(NULL, "str_join_arr: str_clone failed");
 
-    char *arg;
     for (size_t i = 1; i < size; i++) {
         char *tmp = str_concat(buf, joiner, arr[i]);
         if (!tmp) {
             free(buf);
-            THROW(NULL, "str_join_arr: str_concat failed to join with %s", arg);
+            THROW(NULL, "str_join_arr: str_concat failed to join with %s", arr[i]);
         }
 
         buf = tmp;
@@ -339,6 +383,41 @@ char *str_rtrim(char *s) {
 char *str_trim(char *s) {
     if (s == NULL) THROW(NULL, "str_trim: s can't be NULL");
     return str_ltrim(str_rtrim(s));
+}
+
+bool str_eq(char *s1, char *s2) {
+    if (s1 == NULL) THROW(false, "str_eq: s1 can't be NULL");
+    if (s2 == NULL) THROW(false, "str_eq: s2 can't be NULL");
+
+    while (*s1 && *s2) {
+        if (*s1 != *s2) return false;
+        s1++;
+        s2++;
+    }
+
+    return true;
+}
+
+int str_diff(char *s1, char *s2) {
+    if (s1 == NULL) THROW(-1, "str_diff: s1 can't be NULL");
+    if (s2 == NULL) THROW(-1, "str_diff: s2 can't be NULL");
+
+    while (*s1 && *s2 && *s1 == *s2) s1++, s2++;
+    return (unsigned char)*s1 - (unsigned char)*s2;
+}
+
+bool str_info(char *s) {
+    if (s == NULL) THROW(false, "str_info: s can't be NULL");
+
+    char *null_terminated = ('\0' == s[str_len(s) + 1])
+        ? "true"
+        : "false";
+
+    printf("string: %s\n", s);
+    printf("len: %zu\n", str_len(s));
+    printf("null-terminated: %s\n", null_terminated);
+
+    return true;
 }
 
 #endif // STR_IMPLEMENTATION

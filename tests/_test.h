@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdbool.h>
-#include <string.h>
 
 #include "../str.h"
 
@@ -67,7 +66,7 @@ static bool _assert_arr_str(char **a1, size_t s1, char **a2, size_t s2) {
     }
 
     for (size_t i = 0; i < s1; i++) {
-        if (strcmp(a1[i], a2[i]) != 0) {
+        if (!str_eq(a1[i], a2[i])) {
             _test_err("elements at index %zu are different", i);
             _test_err("a1[%zu] = %s, a2[%zu] = %s", i, a1[i], i, a2[i]);
             return false;
@@ -102,7 +101,7 @@ static bool _assert_arr(void *a1, size_t s1, void *a2, size_t s2, char *type) {
         return false;
     }
 
-    return (strcmp(type, "char*") == 0)
+    return (str_eq(type, "char*"))
         ? _assert_arr_str(a1, s1, a2, s2)
         : _assert_arr_int(a1, s1, a2, s2);
 }
@@ -129,14 +128,20 @@ static int _test_suite(bool (**tests)(), size_t total) {
     return 0;
 }
 
-#define ASSERT_BOOL(b1, b2, ...) ({ \
+#define ASSERT(b1, b2, ...) ({ \
     bool ok = _assert((b1 == b2), ##__VA_ARGS__);    \
     if (!in_assert_block) return ok;        \
     ok;                                     \
 })
 
+#define ASSERT_BOOL(b, ...) ({ \
+    bool ok = _assert(b, ##__VA_ARGS__);    \
+    if (!in_assert_block) return ok;        \
+    ok;                                     \
+})
+
 #define ASSERT_STR(s1, s2, ...) ({ \
-    bool ok = _assert(!strcmp(s1, s2), ##__VA_ARGS__); \
+    bool ok = _assert(str_eq(s1, s2), ##__VA_ARGS__); \
     if (!in_assert_block) return ok;        \
     ok;                                     \
 })

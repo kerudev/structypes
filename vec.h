@@ -173,6 +173,8 @@ bool vec_free_deep(Vec *v) {
 }
 
 bool vec_push(Vec *v, void *item) {
+    if (!v) THROW(false, "vec_push: v evaluates to false");
+
     if (v->size == v->capacity) {
         if (VEC_CAPACITY_STEP < 1)
             THROW(false, "vec_push: VEC_CAPACITY_STEP must be 1 or greater");
@@ -191,7 +193,10 @@ bool vec_push(Vec *v, void *item) {
     return true;
 }
 
+// TODO refactor
 bool vec_extend(Vec *dst, Vec *src) {
+    if (!dst) THROW(false, "vec_extend: dst evaluates to false");
+
     if (!src->size)
         THROW(false, "vec_extend: src vector is uninitialized");
 
@@ -219,6 +224,8 @@ bool vec_extend(Vec *dst, Vec *src) {
 }
 
 void *vec_get(Vec *v, size_t index) {
+    if (!v) THROW(false, "vec_get: v evaluates to false");
+
     if (!v->size)
         THROW(NULL, "vec_get: vector is uninitialized");
 
@@ -235,6 +242,8 @@ void *vec_get_ptr(Vec *v, size_t index) {
 }
 
 bool vec_print(Vec *v) {
+    if (!v) THROW(false, "vec_print: v evaluates to false");
+
     if (!v->size)
         THROW(false, "vec_print: vector is uninitialized");
 

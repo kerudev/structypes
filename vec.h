@@ -93,9 +93,12 @@ void *vec_get_ptr(Vec *v, size_t index);
 
 /**
  * Returns the value at `i` casted to `type`.
- * If `vec_get` returns `NULL`, casting it may cause undefined behaviour.
+ * If `vec_get` returns `NULL`, it won't be cast to prevent undefined behaviour.
  */
-#define vec_get_as(v, i, type) (*(type *)vec_get((v), (i)))
+#define vec_get_as(v, i, type) ({   \
+    void *_tmp = vec_get((v), (i)); \
+    (_tmp) ? *(type *)_tmp : NULL;  \
+})
 
 /**
  * Prints each item in `v`.
@@ -136,6 +139,9 @@ static void _vec_err(char *msg, ...) {
 #endif
 
 Vec *vec_new(size_t offset) {
+    if (offset < 1)
+        THROW(NULL, "vec_new: offset must be 1 or greater");
+
     if (VEC_CAPACITY_STEP < 1)
         THROW(NULL, "vec_new: VEC_CAPACITY_STEP must be 1 or greater");
 
@@ -238,7 +244,10 @@ void *vec_get(Vec *v, size_t index) {
 }
 
 void *vec_get_ptr(Vec *v, size_t index) {
-    return *(void **)vec_get(v, index);
+    void *ptr = vec_get(v, index);
+    if (!ptr) return ptr;
+
+    return *(void **)ptr;
 }
 
 bool vec_print(Vec *v) {

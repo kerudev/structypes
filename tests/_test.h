@@ -2,9 +2,8 @@
 #include <stdarg.h>
 #include <stdbool.h>
 
+#define STRUCTYPES_IMPLEMENTATION
 #include "../str.h"
-
-#define VEC_IMPLEMENTATION
 #include "../vec.h"
 
 static char *current_test = NULL;
@@ -31,6 +30,10 @@ static void _test_err(const char *msg, ...) {
     va_end(args);
 
     vec_push(failed_tests, str_clone(current_test));
+}
+
+static void _test_skip() {
+    fprintf(stderr, "[ X ] %s: test skipped\n", current_test);
 }
 
 static bool _assert(bool b, ...) {
@@ -159,6 +162,11 @@ static int _test_suite(bool (**tests)(), size_t total) {
     in_assert_block = false;                \
     return ok;                              \
 })
+
+#define SKIP() {    \
+    _test_skip();   \
+    return true;    \
+}
 
 #define TEST_SUITE(...) ({                      \
     bool (*tests[])(void) = { __VA_ARGS__ };    \

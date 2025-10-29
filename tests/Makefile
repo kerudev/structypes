@@ -1,5 +1,7 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Wno-return-type -Wno-discarded-qualifiers
+CFLAGS = -Wall -Wextra \
+	-Wno-return-type \
+	-Wno-discarded-qualifiers
 
 BUILD_DIR = build
 

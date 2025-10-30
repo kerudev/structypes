@@ -35,7 +35,7 @@ bool vec_new_ok_int() {
 bool vec_new_err_offset_step_lt_1() {
     TEST("vec_new_err_offset_step_lt_1");
 
-    ASSERT_BOOL(vec_new(0) == NULL);
+    ASSERT_NULL(vec_new(0));
 }
 
 bool vec_free_ok() {
@@ -171,7 +171,7 @@ bool vec_get_ok() {
 bool vec_get_err_v_is_null() {
     TEST("vec_get_err_v_is_null");
 
-    ASSERT_BOOL(vec_get(NULL, 0) == NULL);
+    ASSERT_NULL(vec_get(NULL, 0));
 }
 
 bool vec_get_err_v_size_is_0() {
@@ -179,7 +179,7 @@ bool vec_get_err_v_size_is_0() {
 
     Vec *v = vec_new(sizeof(char *));
 
-    ASSERT_BOOL(vec_get(v, 1) == NULL);
+    ASSERT_NULL(vec_get(v, 1));
 }
 
 bool vec_get_err_index_gte_v_size() {
@@ -188,7 +188,7 @@ bool vec_get_err_index_gte_v_size() {
     Vec *v = vec_new(sizeof(char *));
     if (!vec_push(v, "a")) ASSERT_BOOL(false);
 
-    ASSERT_BOOL(vec_get(v, 99) == NULL);
+    ASSERT_NULL(vec_get(v, 99));
 }
 
 bool vec_get_ptr_ok() {
@@ -206,7 +206,7 @@ bool vec_get_ptr_ok() {
 bool vec_get_ptr_err_v_is_null() {
     TEST("vec_get_ptr_err_v_is_null");
 
-    ASSERT_BOOL(vec_get_ptr(NULL, 0) == NULL);
+    ASSERT_NULL(vec_get_ptr(NULL, 0));
 }
 
 bool vec_get_ptr_err_v_size_is_0() {
@@ -214,7 +214,7 @@ bool vec_get_ptr_err_v_size_is_0() {
 
     Vec *v = vec_new(sizeof(char *));
 
-    ASSERT_BOOL(vec_get_ptr(v, 0) == NULL);
+    ASSERT_NULL(vec_get_ptr(v, 0));
 }
 
 bool vec_get_ptr_err_index_gte_v_size() {
@@ -223,7 +223,7 @@ bool vec_get_ptr_err_index_gte_v_size() {
     Vec *v = vec_new(sizeof(char *));
     if (!vec_push(v, "a")) ASSERT_BOOL(false);
 
-    ASSERT_BOOL(vec_get_ptr(v, 99) == NULL);
+    ASSERT_NULL(vec_get_ptr(v, 99));
 }
 
 bool vec_get_as_ok() {
@@ -241,7 +241,7 @@ bool vec_get_as_ok() {
 bool vec_get_as_err_v_is_null() {
     TEST("vec_get_as_err_v_is_null");
 
-    ASSERT_BOOL(vec_get_as(NULL, 0, char *) == NULL);
+    ASSERT_NULL(vec_get_as(NULL, 0, char *));
 }
 
 bool vec_get_as_err_v_size_is_0() {
@@ -249,7 +249,7 @@ bool vec_get_as_err_v_size_is_0() {
 
     Vec *v = vec_new(sizeof(char *));
 
-    ASSERT_BOOL(vec_get_as(v, 0, char *) == NULL);
+    ASSERT_NULL(vec_get_as(v, 0, char *));
 }
 
 bool vec_get_as_err_index_gte_v_size() {
@@ -258,7 +258,7 @@ bool vec_get_as_err_index_gte_v_size() {
     Vec *v = vec_new(sizeof(char *));
     if (!vec_push(v, "a")) ASSERT_BOOL(false);
 
-    ASSERT_BOOL(vec_get_as(v, 99, char *) == NULL);
+    ASSERT_NULL(vec_get_as(v, 99, char *));
 }
 
 bool vec_print_ok() {

@@ -143,6 +143,12 @@ static int _test_suite(bool (**tests)(), size_t total) {
     ok;                                     \
 })
 
+#define ASSERT_NULL(cond, ...) ({ \
+    bool ok = _assert((cond == NULL), ##__VA_ARGS__);    \
+    if (!in_assert_block) return ok;        \
+    ok;                                     \
+})
+
 #define ASSERT_STR(s1, s2, ...) ({ \
     bool ok = _assert(str_eq(s1, s2), ##__VA_ARGS__); \
     if (!in_assert_block) return ok;        \

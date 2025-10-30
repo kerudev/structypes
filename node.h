@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <string.h>
 #include <stdarg.h>
 
 /** A node. */
@@ -78,21 +77,12 @@ Tree *tree_new(void *value);
 Node *node_new(Node *parent, void *value);
 
 /**
- * Creates a node with `value` inside of `node`. 
- *
- * Returns `false` when:
- * - `realloc` for `node->nodes` fails.
- * - `node_new` fails.
- */
-bool node_new_child(Node *node, void *value);
-
-/**
  * Appends `child` to `parent`.
  *
  * Returns `false` when:
  * - `realloc` for `node->nodes` fails.
  */
-bool node_add_child(Node *parent, Node *child);
+bool node_add(Node *parent, Node *child);
 
 /**
  * Same as `node_print_deep`, but with style options.
@@ -101,7 +91,7 @@ bool node_add_child(Node *parent, Node *child);
  * `opts` changes the function's behaviour. Check docs for `NodePrintOpts`.
  *
  * Returns `false` when:
- * - `node` evaluates to false. 
+ * - `node` evaluates to false.
  * - `node->value` is `NULL`.
  * - `opts.indent_step < 1`.
  */
@@ -126,7 +116,7 @@ bool node_print_deep(Node *tree);
  * Prints the value of `node` and the value of its immediate child nodes, but
  * it doesn't recurse into deeper nodes.
  *
- * Use `tree_print_deep` to print deeper nodes of `node`.
+ * Use `node_print_deep` to print deeper nodes of `node`.
  *
  * Returns `false` when:
  * - `node` evaluates to false.
@@ -143,7 +133,7 @@ bool node_info(Node *node);
 
 /**
  * Frees `node` and `node->nodes`.
- * 
+ *
  * Keep in mind that if you free a node that has a parent, not removing that
  * index in the parent is a reference to a dead node.
  *
@@ -160,7 +150,7 @@ size_t node_total(Node *node);
 
 /**
  * Returns a NodePrintOpts with the defined default values:
- * 
+ *
  * By defining the implementation macros, the default values are:
  * - indent: 0
  * - indent_step: 2
@@ -223,30 +213,16 @@ Node *node_new(Node *parent, void *value) {
     node->nodes = NULL;
     node->size = 0;
 
+    if (!node_add(parent, node))
+        THROW(NULL, "node_new: error adding node to parent");
+
     return node;
 }
 
-bool node_new_child(Node *node, void *value) {
-    void *tmp = realloc(node->nodes, (node->size + 1) * sizeof(Node *));
-    if (!tmp)
-        THROW(false, "node_new_child: realloc error");
-
-    node->nodes = tmp;
-
-    Node *newNode = node_new(node, value);
-    if (!newNode)
-        THROW(false, "node_new_child: error creating new node");
-
-    node->nodes[node->size] = newNode;
-    node->size++;
-
-    return true;
-}
-
-bool node_add_child(Node *parent, Node *child) {
+bool node_add(Node *parent, Node *child) {
     void *tmp = realloc(parent->nodes, (parent->size + 1) * sizeof(Node *));
     if (!tmp)
-        THROW(false, "node_add_child: realloc error");
+        THROW(false, "node_add: realloc error");
 
     parent->nodes = tmp;
     parent->nodes[parent->size] = child;
@@ -288,7 +264,7 @@ bool node_print(Node *node, NodePrintOpts opts) {
         _sort = opts.sort;
         qsort(zero, zeroLen, sizeofNode, _comp);
         qsort(nonZero, nonZeroLen, sizeofNode, _comp);
-    }    
+    }
 
     opts.indent += opts.indent_step;
 
@@ -380,9 +356,9 @@ bool node_free(Node *node) {
             continue;
         }
 
-        if (!node_free(node->nodes[i - 1])) 
+        if (!node_free(node->nodes[i - 1]))
             THROW(false, "node_free: recursion error");
-            
+
         node->size--;
     }
 

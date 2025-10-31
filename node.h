@@ -1,12 +1,12 @@
-// tree.h - A tree implementation.
+// node.h - A node implementation.
 //
 // Useful macros:
 // - STRUCTYPES_IMPLEMENTATION: defines all of structype's implementations.
 // - STRUCTYPES_DEBUG: if defined, prints error messages.
-// - TREE_IMPLEMENTATION: implementations of tree and node functions.
+// - NODE_IMPLEMENTATION: implementations of node functions.
 
-#ifndef TREE_H_
-#define TREE_H_
+#ifndef NODE_H_
+#define NODE_H_
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,15 +24,6 @@ typedef struct Node {
     /** Number of child nodes. */
     size_t size;
 } Node;
-
-/**
- * A node tree.
- *
- * The only difference with `Node` is that `Tree` instances should not have a
- * `parent` node. When a `parent` is defined, the `Tree` instance should be
- * treated as a `Node` instance.
- */
-typedef Node Tree;
 
 /**
  * Defines how a function should handle sorting algorithms:
@@ -59,17 +50,7 @@ typedef struct {
 } NodePrintOpts;
 
 /**
- * Creates a new `Tree` with a `value`.
- * See the documentation of `Tree` to know its differences with `Node`.
- *
- * Returns `NULL` when:
- * - `malloc` fails to allocate a new `Tree`.
- */
-Tree *tree_new(void *value);
-
-/**
  * Creates a new `Node` with a `parent` and a `value`.
- * See the documentation of `Tree` to know its differences with `Node`.
  *
  * Returns `NULL` when:
  * - `malloc` fails to allocate a new `Node`.
@@ -108,7 +89,7 @@ bool node_print(Node *node, NodePrintOpts opts);
  * Returns `false` when:
  * - `node` evaluates to false.
  */
-bool node_print_deep(Node *tree);
+bool node_print_deep(Node *node);
 
 /**
  * A "shallow" print of a `Node`.
@@ -158,24 +139,24 @@ size_t node_total(Node *node);
  */
 NodePrintOpts nodeprintopts_default();
 
-#endif // TREE_H_
+#endif // NODE_H_
 
-#if !defined(__TREE_IMPLEMENTED) && (defined(STRUCTYPES_IMPLEMENTATION) || defined(TREE_IMPLEMENTATION))
-#define __TREE_IMPLEMENTED
+#if !defined(__NODE_IMPLEMENTED) && (defined(STRUCTYPES_IMPLEMENTATION) || defined(NODE_IMPLEMENTATION))
+#define __NODE_IMPLEMENTED
 
 static int _indent = 0;
 static int _indent_step = 2;
 static NodeSortOpts _sort;
 
 #ifdef STRUCTYPES_DEBUG
-static void _tree_err(char *msg, ...) {
+static void _node_err(char *msg, ...) {
     va_list args;
     va_start(args, msg);
     vfprintf(stderr, msg, args);
     fprintf(stderr, "\n");
     va_end(args);
 }
-#define THROW(ret, msg, ...) ({ _tree_err(msg, ##__VA_ARGS__); return ret; })
+#define THROW(ret, msg, ...) ({ _node_err(msg, ##__VA_ARGS__); return ret; })
 #else
 #define THROW(ret, msg, ...) ({ return ret; })
 #endif
@@ -190,19 +171,6 @@ static int _comp(const void *a, const void *b) {
     );
 }
 
-Tree *tree_new(void *value) {
-    Tree *tree = malloc(sizeof(Tree));
-    if (!tree)
-        THROW(NULL, "tree_new: malloc error on initialize root");
-
-    tree->value = value;
-    tree->parent = NULL;
-    tree->nodes = NULL;
-    tree->size = 0;
-
-    return tree;
-}
-
 Node *node_new(Node *parent, void *value) {
     Node *node = malloc(sizeof(Node));
     if (!node)
@@ -213,7 +181,7 @@ Node *node_new(Node *parent, void *value) {
     node->nodes = NULL;
     node->size = 0;
 
-    if (!node_add(parent, node))
+    if (parent && !node_add(parent, node))
         THROW(NULL, "node_new: error adding node to parent");
 
     return node;
@@ -377,4 +345,4 @@ NodePrintOpts nodeprintopts_default() {
     };
 }
 
-#endif // TREE_IMPLEMENTATION
+#endif // NODE_IMPLEMENTATION

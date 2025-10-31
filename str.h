@@ -18,9 +18,6 @@
 #include <stddef.h>
 #include <ctype.h>
 
-// TODO replace strtok to get rid of this include
-#include <string.h>
-
 /**
  * `strlen` replacement.
  * 
@@ -52,6 +49,22 @@ char *str_clone(char *s);
 char str_char_at(char *str, int n);
 
 /**
+ * `strtok` replacement.
+ * 
+ * Returns the first token encountered in `str` separated by `sep`.
+ * Doesn't create a copy of `str`. Its pointer gets advanced on each call.
+ *
+ * This function is not meant to be called directly, but by other functions in
+ * the `str_split` family.
+ *
+ * Returns `NULL` when:
+ * - `str` is not a pointer.
+ * - `str` value evaluates to false.
+ * - `sep` evaluates to false.
+ */
+char *__str_tok(char **str, const char *sep);
+
+/**
  * Splits `str` using the characters in `sep`.
  * Returns an array of pointers to strings with a length of `total`.
  *
@@ -67,7 +80,7 @@ char **str_split(char *str, const char *sep, size_t *total);
  *
  * Returns `NULL` when:
  * - `str_clone` fails to duplicate `str`.
- * - `strtok` return a `NULL` token.
+ * - `__str_tok` returns a `NULL` token.
  * - `str_clone` fails to duplicate `first` (returned value).
  */
 char *str_split_first(char *str, const char *sep);
@@ -78,7 +91,7 @@ char *str_split_first(char *str, const char *sep);
  *
  * Returns `NULL` when:
  * - `str_clone` fails to duplicate `str`.
- * - `strtok` return a `NULL` token.
+ * - `__str_tok` returns a `NULL` token.
  * - `str_clone` fails to duplicate `first` (returned value).
  */
 char *str_split_last(char *str, const char *sep);
@@ -87,7 +100,7 @@ char *str_split_last(char *str, const char *sep);
  * Returns `s1` and `s1` concatenated into one string.
  *
  * This function is not meant to be called directly, but by other functions in
- * the str_concat family.
+ * the `str_concat` family.
  *
  * Returns `NULL` when:
  * - `s1` or `s2` are `NULL`.
@@ -230,8 +243,30 @@ char str_char_at(char *str, int n) {
     return (n < 0) ? str[len + n] : str[n];
 }
 
+char *__str_tok(char **str, const char *sep) {
+    char *tmp = *str;
+    if (!tmp || !*tmp || !sep) return NULL;
+
+    char *ret = malloc(str_len(tmp) + 1);
+    char *token = ret;
+
+    while (*tmp && *tmp != *sep) *ret++ = *tmp++;
+    *ret = '\0';
+
+    if (*tmp == *sep) tmp++;
+
+    int i = 0, j = 0;
+    while (tmp[i]) tmp[j++] = tmp[i++];
+    tmp[j] = '\0';
+
+    *str = tmp;
+
+    return token;
+}
+
 char **str_split(char *str, const char *sep, size_t *total) {
     *total = 0;
+    if (!str || !sep) return NULL;
 
     char *tmp = str_clone(str);
     if (tmp == NULL) THROW(NULL, "str_split: error cloning str");
@@ -239,8 +274,8 @@ char **str_split(char *str, const char *sep, size_t *total) {
     char **tokens = NULL;
     size_t size = sizeof(char *);
 
-    char *token = strtok(tmp, sep);
-    while (token) {
+    char *token;
+    while ((token = __str_tok(&tmp, sep))) {
         char **new_tokens = realloc(tokens, (*total + 1) * size);
         if (!new_tokens) {
             free(tokens);
@@ -250,10 +285,10 @@ char **str_split(char *str, const char *sep, size_t *total) {
 
         tokens = new_tokens;
         tokens[(*total)++] = str_clone(token);
-        token = strtok(NULL, sep);
     }
 
-    free(tmp);
+    // TODO fix memory leak on __str_tok
+    // free(tmp);
 
     return tokens;
 }
@@ -262,35 +297,32 @@ char *str_split_first(char *str, const char *sep) {
     char *tmp = str_clone(str);
     if (tmp == NULL) THROW(NULL, "str_split_first: error cloning str");
 
-    char *token = strtok(tmp, sep);
+    char *token = __str_tok(&tmp, sep);
     if (token == NULL) {
         free(tmp);
-        THROW(NULL, "str_split_first: strtok error");
+        THROW(NULL, "str_split_first: __str_tok error");
     }
 
     char *first = str_clone(token);
-    free(tmp);
+
+    // TODO fix
+    // free(tmp);
 
     return first;
 }
 
 char *str_split_last(char *str, const char *sep) {
+    if (!str) return str;
+
     char *tmp = str_clone(str);
     if (tmp == NULL) THROW(NULL, "str_split_last: error cloning str");
 
-    char *token = strtok(tmp, sep);
-    if (token == NULL) {
-        free(tmp);
-        THROW(NULL, "str_split_last: strtok error");
-    }
-
+    char *token;
     char *last;
-    while (token) {
-        last = str_clone(token);
-        token = strtok(NULL, sep);
-    }
+    while ((token = __str_tok(&tmp, sep))) last = str_clone(token);
 
-    free(tmp);
+    // TODO fix
+    // free(tmp);
 
     return last;
 }

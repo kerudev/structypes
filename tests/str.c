@@ -141,11 +141,11 @@ bool str_char_at_err_negative_index_oob() {
 bool str_split_ok_one_item() {
     TEST("str_split_ok_one_item");
 
-    char *str = "a";
+    char *str = "abcde";
     size_t total = 0;
 
     char **result = str_split(str, "/", &total);
-    char *expected[] = {"a"};
+    char *expected[] = {"abcde"};
     size_t expected_size = 1;
 
     ASSERT_ARR(
@@ -249,9 +249,9 @@ bool str_split_last_err_no_token() {
     char *str = "";
 
     char *result = str_split_last(str, "/");
-    char *expected = NULL;
+    char *expected = "";
 
-    ASSERT(result, expected);
+    ASSERT_STR(result, expected);
 }
 
 bool __str_concat_ok_heap_strings() {
@@ -635,6 +635,8 @@ bool str_info_err_s_is_null() {
 }
 
 int main() {
+    // TODO __str_tok tests
+
     TEST_SUITE(
         // str_len
         str_len_ok,

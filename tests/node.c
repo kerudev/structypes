@@ -2,40 +2,41 @@
 
 #define STRUCTYPES_IMPLEMENTATION
 #define STRUCTYPES_DEBUG
-#include "../tree.h"
+#include "../node.h"
 
-bool tree_new_ok_with_value() {
-    TEST("tree_new_ok_with_value");
+bool node_new_ok_null_parent_and_value() {
+    TEST("node_new_ok_null_parent_and_value");
 
     char *value = "abcde";
-    Tree *result = tree_new(value);
+    Node *node = node_new(NULL, value);
 
     ASSERT_BLOCK(
-        ASSERT_STR(result->value, value),
-        ASSERT_NULL(result->parent),
-        ASSERT_NULL(result->nodes),
-        ASSERT_BOOL(result->size == 0),
+        ASSERT_STR(node->value, value),
+        ASSERT_NULL(node->parent),
+        ASSERT_NULL(node->nodes),
+        ASSERT_BOOL(node->size == 0),
     );
 }
 
-bool tree_new_ok_null_value() {
-    TEST("tree_new_ok_null_value");
+bool node_new_ok_null_parent_and_null_value() {
+    TEST("node_new_ok_null_parent_and_null_value");
 
-    Tree *result = tree_new(NULL);
+    char *value = NULL;
+    Node *node = node_new(NULL, value);
 
     ASSERT_BLOCK(
-        ASSERT_NULL(result->value),
-        ASSERT_NULL(result->parent),
-        ASSERT_NULL(result->nodes),
-        ASSERT_BOOL(result->size == 0),
+        ASSERT_NULL(node->value),
+        ASSERT_NULL(node->parent),
+        ASSERT_NULL(node->nodes),
+        ASSERT_BOOL(node->size == 0),
     );
 }
 
-bool node_new_ok_with_value() {
-    TEST("node_new_ok_with_value");
+bool node_new_ok_with_parent_and_value() {
+    TEST("node_new_ok_with_parent_and_value");
 
     char *value = "abcde";
-    Tree *parent = tree_new(value);
+    Node *parent = node_new(NULL, value);
     Node *result = node_new(parent, value);
 
     ASSERT_BLOCK(
@@ -51,11 +52,11 @@ bool node_new_ok_with_value() {
     );
 }
 
-bool node_new_ok_null_value() {
-    TEST("node_new_ok_null_value");
+bool node_new_ok_with_parent_and_null_value() {
+    TEST("node_new_ok_with_parent_and_null_value");
 
     char *value = NULL;
-    Tree *parent = tree_new(value);
+    Node *parent = node_new(NULL, value);
     Node *result = node_new(parent, value);
 
     ASSERT_BLOCK(
@@ -85,13 +86,11 @@ bool nodeprintopts_default_ok() {
 
 int main(int argc, char const *argv[]) {
     TEST_SUITE(
-        // tree_new
-        tree_new_ok_with_value,
-        tree_new_ok_null_value,
-
         // node_new
-        node_new_ok_with_value,
-        node_new_ok_null_value,
+        node_new_ok_null_parent_and_value,
+        node_new_ok_null_parent_and_null_value,
+        node_new_ok_with_parent_and_value,
+        node_new_ok_with_parent_and_null_value,
 
         // NodePrintOpts
         nodeprintopts_default_ok,

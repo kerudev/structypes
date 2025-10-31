@@ -15,10 +15,10 @@ vec: vec.c ../vec.h
 	$(CC) $(CFLAGS) -ggdb vec.c -o $(BUILD_DIR)/vec \
 		&& ./$(BUILD_DIR)/vec
 
-tree: tree.c ../tree.h
+node: node.c ../node.h
 	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -ggdb tree.c -o $(BUILD_DIR)/tree \
-		&& ./$(BUILD_DIR)/tree
+	$(CC) $(CFLAGS) -ggdb node.c -o $(BUILD_DIR)/node \
+		&& ./$(BUILD_DIR)/node
 
 clean:
 	rm -rf $(BUILD_DIR)/*

@@ -188,6 +188,12 @@ Node *node_new(Node *parent, void *value) {
 }
 
 bool node_add(Node *parent, Node *child) {
+    if (!parent)
+        THROW(false, "node_add: parent evaluates to false");
+
+    if (!child)
+        THROW(false, "node_add: child evaluates to false");
+
     void *tmp = realloc(parent->nodes, (parent->size + 1) * sizeof(Node *));
     if (!tmp)
         THROW(false, "node_add: realloc error");

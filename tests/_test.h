@@ -137,8 +137,26 @@ static int _test_suite(bool (**tests)(), size_t total) {
     ok;                                     \
 })
 
+#define ASSERT_ZERO(n, ...) ({ \
+    bool ok = _assert(n == 0, ##__VA_ARGS__);    \
+    if (!in_assert_block) return ok;        \
+    ok;                                     \
+})
+
 #define ASSERT_BOOL(b, ...) ({ \
     bool ok = _assert(b, ##__VA_ARGS__);    \
+    if (!in_assert_block) return ok;        \
+    ok;                                     \
+})
+
+#define ASSERT_TRUE(b, ...) ({ \
+    bool ok = _assert(b, ##__VA_ARGS__);    \
+    if (!in_assert_block) return ok;        \
+    ok;                                     \
+})
+
+#define ASSERT_FALSE(b, ...) ({ \
+    bool ok = _assert(!b, ##__VA_ARGS__);   \
     if (!in_assert_block) return ok;        \
     ok;                                     \
 })

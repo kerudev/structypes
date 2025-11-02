@@ -11,43 +11,25 @@ bool str_len_ok() {
 
     char *s = "abcde";
 
-    size_t result = str_len(s);
-    size_t expected = 5;
-
-    ASSERT(result, expected);
+    ASSERT(str_len(s), 5);
 }
 
 bool str_len_err_s_is_empty() {
     TEST("str_len_err_s_is_empty");
 
-    char *s = "";
-
-    size_t result = str_len(s);
-    size_t expected = 0;
-
-    ASSERT(result, expected);
+    ASSERT_ZERO(str_len(""));
 }
 
 bool str_len_err_s_is_null() {
     TEST("str_len_err_s_is_null");
 
-    char *s = NULL;
-
-    size_t result = str_len(s);
-    size_t expected = 0;
-
-    ASSERT(result, expected);
+    ASSERT_ZERO(str_len(NULL));
 }
 
 bool str_len_err_s_is_null_terminator() {
     TEST("str_len_err_s_is_null_terminator");
 
-    char *s = "\0";
-
-    size_t result = str_len(s);
-    size_t expected = 0;
-
-    ASSERT(result, expected);
+    ASSERT_ZERO(str_len("\0"));
 }
 
 bool str_clone_ok() {
@@ -75,12 +57,7 @@ bool str_clone_err_s_is_empty() {
 bool str_clone_err_s_is_null() {
     TEST("str_clone_err_s_is_null");
 
-    char *s = NULL;
-
-    char *result = str_clone(s);
-    char *expected = NULL;
-
-    ASSERT(result, expected);
+    ASSERT_NULL(str_clone(NULL));
 }
 
 bool str_clone_err_s_is_null_terminator() {
@@ -179,12 +156,10 @@ bool str_split_err_str_is_null() {
     size_t total = 0;
 
     char **result = str_split(str, "/", &total);
-    char **expected = NULL;
-    size_t expected_size = 0;
 
     ASSERT_BLOCK(
-        ASSERT(result, expected),
-        ASSERT(total, expected_size),
+        ASSERT_NULL(result),
+        ASSERT_ZERO(total),
     );
 }
 
@@ -202,23 +177,13 @@ bool str_split_first_ok() {
 bool str_split_first_err_str_is_null() {
     TEST("str_split_first_err_str_is_null");
 
-    char *str = NULL;
-
-    char *result = str_split_first(str, "/");
-    char *expected = NULL;
-
-    ASSERT(result, expected);
+    ASSERT_NULL(str_split_first(NULL, "/"));
 }
 
 bool str_split_first_err_no_token() {
     TEST("str_split_first_err_no_token");
 
-    char *str = "";
-
-    char *result = str_split_first(str, "/");
-    char *expected = NULL;
-
-    ASSERT(result, expected);
+    ASSERT_NULL(str_split_first("", "/"));
 }
 
 bool str_split_last_ok() {
@@ -235,12 +200,7 @@ bool str_split_last_ok() {
 bool str_split_last_err_str_is_null() {
     TEST("str_split_last_err_str_is_null");
 
-    char *str = NULL;
-
-    char *result = str_split_last(str, "/");
-    char *expected = NULL;
-
-    ASSERT(result, expected);
+    ASSERT_NULL(str_split_last(NULL, "/"));
 }
 
 bool str_split_last_err_no_token() {
@@ -284,25 +244,13 @@ bool __str_concat_ok_stack_strings() {
 bool __str_concat_err_s1_is_null() {
     TEST("__str_concat_err_s1_is_null");
 
-    char *s1 = NULL;
-    char *s2 = "def";
-
-    char *result = __str_concat(s1, s2);
-    char *expected = NULL;
-
-    ASSERT(result, expected);
+    ASSERT_NULL(__str_concat(NULL, "def"));
 }
 
 bool __str_concat_err_s2_is_null() {
     TEST("__str_concat_err_s2_is_null");
 
-    char *s1 = "abc";
-    char *s2 = NULL;
-
-    char *result = __str_concat(s1, s2);
-    char *expected = NULL;
-
-    ASSERT(result, expected);
+    ASSERT_NULL(__str_concat("abc", NULL));
 }
 
 bool str_concat_arr_ok() {
@@ -320,13 +268,7 @@ bool str_concat_arr_ok() {
 bool str_concat_arr_err_arr_is_null() {
     TEST("str_concat_arr_err_arr_is_null");
 
-    char **arr = NULL;
-    size_t size = 3;
-
-    char *result = str_concat_arr(arr, size);
-    char *expected = NULL;
-
-    ASSERT(result, expected);
+    ASSERT_NULL(str_concat_arr(NULL, 3));
 }
 
 bool str_concat_arr_err_size_is_zero() {
@@ -336,9 +278,8 @@ bool str_concat_arr_err_size_is_zero() {
     size_t size = 0;
 
     char *result = str_concat_arr(arr, size);
-    char *expected = NULL;
 
-    ASSERT(result, expected);
+    ASSERT_NULL(result);
 }
 
 bool str_concat_arr_err_arr_first_is_null() {
@@ -348,9 +289,8 @@ bool str_concat_arr_err_arr_first_is_null() {
     size_t size = 3;
 
     char *result = str_concat_arr(arr, size);
-    char *expected = NULL;
 
-    ASSERT(result, expected);
+    ASSERT_NULL(result);
 }
 
 bool str_concat_arr_err_arr_other_is_null() {
@@ -360,9 +300,8 @@ bool str_concat_arr_err_arr_other_is_null() {
     size_t size = 3;
 
     char *result = str_concat_arr(arr, size);
-    char *expected = NULL;
 
-    ASSERT(result, expected);
+    ASSERT_NULL(result);
 }
 
 bool str_concat_ok() {
@@ -378,9 +317,8 @@ bool str_concat_err_first_concat_err() {
     TEST("str_concat_err_first_concat_err");
 
     char *result = str_concat("ab", NULL, "ef");
-    char *expected = NULL;
 
-    ASSERT(result, expected);
+    ASSERT_NULL(result);
 }
 
 bool str_join_arr_ok() {
@@ -402,9 +340,8 @@ bool str_join_arr_err_joiner_is_null() {
     size_t size = 3;
 
     char *result = str_join_arr(NULL, arr, size);
-    char *expected = NULL;
 
-    ASSERT(result, expected);
+    ASSERT_NULL(result);
 }
 
 bool str_join_arr_err_s1_is_null() {
@@ -414,9 +351,8 @@ bool str_join_arr_err_s1_is_null() {
     size_t size = 3;
 
     char *result = str_join_arr("/", arr, size);
-    char *expected = NULL;
 
-    ASSERT(result, expected);
+    ASSERT_NULL(result);
 }
 
 bool str_join_arr_err_s2_is_null() {
@@ -426,9 +362,8 @@ bool str_join_arr_err_s2_is_null() {
     size_t size = 3;
 
     char *result = str_join_arr("/", arr, size);
-    char *expected = NULL;
 
-    ASSERT(result, expected);
+    ASSERT_NULL(result);
 }
 
 bool str_join_ok() {
@@ -444,27 +379,24 @@ bool str_join_err_joiner_is_null() {
     TEST("str_join_err_joiner_is_null");
 
     char *result = str_join(NULL, "ab", "cd", "ef");
-    char *expected = NULL;
 
-    ASSERT(result, expected);
+    ASSERT_NULL(result);
 }
 
 bool str_join_err_s1_is_null() {
     TEST("str_join_err_s1_is_null");
 
     char *result = str_join("/", NULL, "cd", "ef");
-    char *expected = NULL;
 
-    ASSERT(result, expected);
+    ASSERT_NULL(result);
 }
 
 bool str_join_err_s2_is_null() {
     TEST("str_join_err_s2_is_null");
 
     char *result = str_join("/", "ab", NULL, "ef");
-    char *expected = NULL;
 
-    ASSERT(result, expected);
+    ASSERT_NULL(result);
 }
 
 bool str_ltrim_ok() {
@@ -491,9 +423,8 @@ bool str_ltrim_err_s_is_null() {
     TEST("str_ltrim_err_s_is_null");
 
     char *result = str_ltrim(NULL);
-    char *expected = NULL;
 
-    ASSERT(result, expected);
+    ASSERT_NULL(result);
 }
 
 bool str_rtrim_ok() {
@@ -519,10 +450,7 @@ bool str_rtrim_ok_s_is_empty() {
 bool str_rtrim_err_s_is_null() {
     TEST("str_rtrim_err_s_is_null");
 
-    char *result = str_rtrim(NULL);
-    char *expected = NULL;
-
-    ASSERT(result, expected);
+    ASSERT_NULL(str_rtrim(NULL));
 }
 
 bool str_trim_ok() {
@@ -548,10 +476,7 @@ bool str_trim_ok_s_is_empty() {
 bool str_trim_err_s_is_null() {
     TEST("str_trim_err_s_is_null");
 
-    char *result = str_trim(NULL);
-    char *expected = NULL;
-
-    ASSERT(result, expected);
+    ASSERT_NULL(str_trim(NULL));
 }
 
 bool str_eq_ok() {

@@ -72,6 +72,54 @@ bool node_new_ok_with_parent_and_null_value() {
     );
 }
 
+bool node_add_ok() {
+    TEST("node_add_ok");
+
+    char *value1 = "abcde";
+    char *value2 = "12345";
+
+    Node *parent = node_new(NULL, value1);
+    Node *child = node_new(NULL, value2);
+
+    bool result = node_add(parent, child);
+
+    ASSERT_BLOCK(
+        ASSERT_TRUE(result),
+
+        ASSERT_STR(parent->value, value1),
+        ASSERT_NULL(parent->parent),
+        ASSERT(parent->nodes[0], child),
+        ASSERT_BOOL(parent->size == 1),
+
+        ASSERT_STR(child->value, value2),
+        ASSERT(child->parent, parent),
+        ASSERT_NULL(child->nodes),
+        ASSERT_BOOL(child->size == 0),
+    );
+}
+
+bool node_add_err_parent_is_null() {
+    TEST("node_add_err_parent_is_null");
+
+    char *value = "abcde";
+    Node *child = node_new(NULL, value);
+
+    bool result = node_add(NULL, child);
+
+    ASSERT_FALSE(result);
+}
+
+bool node_add_err_child_is_null() {
+    TEST("node_add_err_child_is_null");
+
+    char *value = "abcde";
+    Node *parent = node_new(NULL, value);
+
+    bool result = node_add(parent, NULL);
+
+    ASSERT_FALSE(result);
+}
+
 bool nodeprintopts_default_ok() {
     TEST("nodeprintopts_default_ok");
 
@@ -91,6 +139,11 @@ int main(int argc, char const *argv[]) {
         node_new_ok_null_parent_and_null_value,
         node_new_ok_with_parent_and_value,
         node_new_ok_with_parent_and_null_value,
+
+        // node_add
+        node_add_ok,
+        node_add_err_parent_is_null,
+        node_add_err_child_is_null,
 
         // NodePrintOpts
         nodeprintopts_default_ok,

@@ -198,6 +198,8 @@ bool node_add(Node *parent, Node *child) {
     if (!tmp)
         THROW(false, "node_add: realloc error");
 
+    child->parent = parent;
+        
     parent->nodes = tmp;
     parent->nodes[parent->size] = child;
     parent->size++;

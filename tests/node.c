@@ -81,10 +81,8 @@ bool node_add_ok() {
     Node *parent = node_new(NULL, value1);
     Node *child = node_new(NULL, value2);
 
-    bool result = node_add(parent, child);
-
     ASSERT_BLOCK(
-        ASSERT_TRUE(result),
+        ASSERT_TRUE(node_add(parent, child)),
 
         ASSERT_STR(parent->value, value1),
         ASSERT_NULL(parent->parent),
@@ -104,9 +102,7 @@ bool node_add_err_parent_is_null() {
     char *value = "abcde";
     Node *child = node_new(NULL, value);
 
-    bool result = node_add(NULL, child);
-
-    ASSERT_FALSE(result);
+    ASSERT_FALSE(node_add(NULL, child));
 }
 
 bool node_add_err_child_is_null() {
@@ -115,9 +111,87 @@ bool node_add_err_child_is_null() {
     char *value = "abcde";
     Node *parent = node_new(NULL, value);
 
-    bool result = node_add(parent, NULL);
+    ASSERT_FALSE(node_add(parent, NULL));
+}
 
-    ASSERT_FALSE(result);
+bool node_print_ok() {
+    TEST("node_print_ok");
+
+    char *value1 = "abcde";
+    char *value2 = "12345";
+
+    Node *parent = node_new(NULL, value1);
+    Node *child = node_new(parent, value2);
+
+    ASSERT_TRUE(node_print(parent, nodeprintopts_default()));
+}
+
+bool node_print_ok_node_size_is_0() {
+    TEST("node_print_ok_node_size_is_0");
+
+    Node *node = node_new(NULL, "abcde");
+
+    ASSERT_TRUE(node_print(node, nodeprintopts_default()));
+}
+
+bool node_print_err_node_is_null() {
+    TEST("node_print_err_node_is_null");
+
+    ASSERT_FALSE(node_print(NULL, (NodePrintOpts){0}));
+}
+
+bool node_print_err_opts_indent_step_lt_1() {
+    TEST("node_print_err_opts_indent_step_lt_1");
+
+    Node *node = node_new(NULL, "abcde");
+    NodePrintOpts opts = nodeprintopts_default();
+    opts.indent_step = 0;
+
+    ASSERT_FALSE(node_print(node, opts));
+}
+
+bool node_print_deep_ok() {
+    TEST("node_print_deep_ok");
+
+    char *value1 = "abcde";
+    char *value2 = "12345";
+
+    Node *parent = node_new(NULL, value1);
+    Node *child = node_new(parent, value2);
+
+    ASSERT_TRUE(node_print_deep(parent));
+}
+
+bool node_print_deep_err_node_is_null() {
+    TEST("node_print_deep_err_node_is_null");
+
+    ASSERT_FALSE(node_print_deep(NULL));
+}
+
+bool node_print_shallow_ok() {
+    TEST("node_print_shallow_ok");
+
+    Node *node = node_new(NULL, "abcde");
+
+    ASSERT_TRUE(node_print_shallow(node));
+}
+
+bool node_print_shallow_err_node_is_null() {
+    TEST("node_print_shallow_err_node_is_null");
+
+    ASSERT_FALSE(node_print_shallow(NULL));
+}
+
+bool node_info_ok() {
+    TEST("node_info_ok");
+
+    ASSERT_TRUE(node_info(node_new(NULL, "abcde")));
+}
+
+bool node_info_err_node_is_null() {
+    TEST("node_info_err_node_is_null");
+
+    ASSERT_FALSE(node_info(NULL));
 }
 
 bool nodeprintopts_default_ok() {
@@ -144,6 +218,24 @@ int main(int argc, char const *argv[]) {
         node_add_ok,
         node_add_err_parent_is_null,
         node_add_err_child_is_null,
+
+        // node_print
+        node_print_ok,
+        node_print_ok_node_size_is_0,
+        node_print_err_node_is_null,
+        node_print_err_opts_indent_step_lt_1,
+
+        // node_print_deep
+        node_print_deep_ok,
+        node_print_deep_err_node_is_null,
+
+        // node_print_shallow
+        node_print_shallow_ok,
+        node_print_shallow_err_node_is_null,
+
+        // node_info
+        node_info_ok,
+        node_info_err_node_is_null,
 
         // NodePrintOpts
         nodeprintopts_default_ok,

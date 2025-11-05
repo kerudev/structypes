@@ -4,6 +4,8 @@
 #define STRUCTYPES_DEBUG
 #include "../node.h"
 
+// TODO free memory on tests
+
 bool node_new_ok_null_parent_and_value() {
     TEST("node_new_ok_null_parent_and_value");
 
@@ -14,21 +16,20 @@ bool node_new_ok_null_parent_and_value() {
         ASSERT_STR(node->value, value),
         ASSERT_NULL(node->parent),
         ASSERT_NULL(node->nodes),
-        ASSERT_BOOL(node->size == 0),
+        ASSERT_ZERO(node->size),
     );
 }
 
 bool node_new_ok_null_parent_and_null_value() {
     TEST("node_new_ok_null_parent_and_null_value");
 
-    char *value = NULL;
-    Node *node = node_new(NULL, value);
+    Node *node = node_new(NULL, NULL);
 
     ASSERT_BLOCK(
         ASSERT_NULL(node->value),
         ASSERT_NULL(node->parent),
         ASSERT_NULL(node->nodes),
-        ASSERT_BOOL(node->size == 0),
+        ASSERT_ZERO(node->size),
     );
 }
 
@@ -42,13 +43,13 @@ bool node_new_ok_with_parent_and_value() {
     ASSERT_BLOCK(
         ASSERT_STR(parent->value, value),
         ASSERT_NULL(parent->parent),
-        ASSERT(parent->nodes[0], result),
-        ASSERT_BOOL(parent->size == 1),
+        ASSERT(parent->nodes[0] == result),
+        ASSERT(parent->size == 1),
 
         ASSERT_STR(result->value, value),
-        ASSERT(result->parent, parent),
+        ASSERT(result->parent == parent),
         ASSERT_NULL(result->nodes),
-        ASSERT_BOOL(result->size == 0),
+        ASSERT_ZERO(result->size),
     );
 }
 
@@ -62,13 +63,13 @@ bool node_new_ok_with_parent_and_null_value() {
     ASSERT_BLOCK(
         ASSERT_NULL(parent->value),
         ASSERT_NULL(parent->parent),
-        ASSERT(parent->nodes[0], result),
-        ASSERT_BOOL(parent->size == 1),
+        ASSERT(parent->nodes[0] == result),
+        ASSERT(parent->size == 1),
 
         ASSERT_NULL(result->value),
-        ASSERT(result->parent, parent),
+        ASSERT(result->parent == parent),
         ASSERT_NULL(result->nodes),
-        ASSERT_BOOL(result->size == 0),
+        ASSERT_ZERO(result->size),
     );
 }
 
@@ -86,21 +87,20 @@ bool node_add_ok() {
 
         ASSERT_STR(parent->value, value1),
         ASSERT_NULL(parent->parent),
-        ASSERT(parent->nodes[0], child),
-        ASSERT_BOOL(parent->size == 1),
+        ASSERT(parent->nodes[0] == child),
+        ASSERT(parent->size == 1),
 
         ASSERT_STR(child->value, value2),
-        ASSERT(child->parent, parent),
+        ASSERT(child->parent == parent),
         ASSERT_NULL(child->nodes),
-        ASSERT_BOOL(child->size == 0),
+        ASSERT_ZERO(child->size),
     );
 }
 
 bool node_add_err_parent_is_null() {
     TEST("node_add_err_parent_is_null");
 
-    char *value = "abcde";
-    Node *child = node_new(NULL, value);
+    Node *child = node_new(NULL, "abcde");
 
     ASSERT_FALSE(node_add(NULL, child));
 }
@@ -108,8 +108,7 @@ bool node_add_err_parent_is_null() {
 bool node_add_err_child_is_null() {
     TEST("node_add_err_child_is_null");
 
-    char *value = "abcde";
-    Node *parent = node_new(NULL, value);
+    Node *parent = node_new(NULL, "abcde");
 
     ASSERT_FALSE(node_add(parent, NULL));
 }
@@ -117,11 +116,8 @@ bool node_add_err_child_is_null() {
 bool node_print_ok() {
     TEST("node_print_ok");
 
-    char *value1 = "abcde";
-    char *value2 = "12345";
-
-    Node *parent = node_new(NULL, value1);
-    Node *child = node_new(parent, value2);
+    Node *parent = node_new(NULL, "abcde");
+    Node *child = node_new(parent, "12345");
 
     ASSERT_TRUE(node_print(parent, nodeprintopts_default()));
 }
@@ -201,7 +197,7 @@ bool node_total_ok() {
     Node *child1 = node_new(parent, "123");
     Node *child2 = node_new(parent, "456");
 
-    ASSERT_BOOL(node_total(parent) == 2);
+    ASSERT(node_total(parent) == 2);
 }
 
 bool node_total_ok_without_nodes() {
@@ -247,13 +243,13 @@ bool nodeprintopts_default_ok() {
     NodePrintOpts opts = nodeprintopts_default();
 
     ASSERT_BLOCK(
-        ASSERT_BOOL(opts.indent == 0),
-        ASSERT_BOOL(opts.indent_step == 2),
-        ASSERT_BOOL(opts.sort == ASC),
+        ASSERT_ZERO(opts.indent),
+        ASSERT(opts.indent_step == 2),
+        ASSERT(opts.sort == ASC),
     );
 }
 
-int main(int argc, char const *argv[]) {
+int main() {
     TEST_SUITE(
         // node_new
         node_new_ok_null_parent_and_value,

@@ -219,7 +219,7 @@ bool node_print(Node *node, NodePrintOpts opts) {
     if (opts.indent_step < 1)
         THROW(false, "node_print: indent_step must be greater than 0");
 
-    printf("%*s%s\n", opts.indent, "", node->value);
+    printf("%*s%s\n", opts.indent, "", (char *)node->value);
     if (!node->size) return true;
 
     size_t sizeofNode = sizeof(Node *);
@@ -233,8 +233,8 @@ bool node_print(Node *node, NodePrintOpts opts) {
         THROW(false, "node_print: malloc");
     }
 
-    int zeroLen = 0;
-    int nonZeroLen = 0;
+    size_t zeroLen = 0;
+    size_t nonZeroLen = 0;
 
     for (size_t i = 0; i < node->size; i++) {
         if (!node->nodes[i]->size) zero[zeroLen++] = node->nodes[i];
@@ -250,7 +250,7 @@ bool node_print(Node *node, NodePrintOpts opts) {
     opts.indent += opts.indent_step;
 
     for (size_t i = 0; i < zeroLen; i++)
-        printf("%*s%s\n", opts.indent, "", zero[i]->value);
+        printf("%*s%s\n", opts.indent, "", (char *)zero[i]->value);
 
     for (size_t i = 0; i < nonZeroLen; i++)
         if (!node_print(nonZero[i], opts)) {
@@ -268,7 +268,7 @@ bool node_print(Node *node, NodePrintOpts opts) {
 bool node_print_deep(Node *node) {
     if (!node) THROW(false, "node_print_deep: node evaluates to false");
 
-    printf("%*s%s\n", _indent, "", node->value);
+    printf("%*s%s\n", _indent, "", (char *)node->value);
 
     _indent += _indent_step;
     size_t local_indent = _indent;
@@ -281,7 +281,7 @@ bool node_print_deep(Node *node) {
                 THROW(false, "node_print_deep: recursion error");
             _indent = local_indent;
         } else {
-            printf("%*s%s\n", _indent, "", child->value);
+            printf("%*s%s\n", _indent, "", (char *)child->value);
         }
     }
 
@@ -292,10 +292,10 @@ bool node_print_shallow(Node *node) {
     if (!node)
         THROW(false, "node_print_shallow: node evaluates to false");
 
-    printf("%s\n", node->value);
+    printf("%s\n", (char *)node->value);
 
     for (size_t i = 0; i < node->size; i++)
-        printf("%*s%s\n", _indent_step, "", node->nodes[i]->value);
+        printf("%*s%s\n", _indent_step, "", (char *)node->nodes[i]->value);
 
     return true;
 }
@@ -303,8 +303,12 @@ bool node_print_shallow(Node *node) {
 bool node_info(Node *node) {
     if (!node) THROW(false, "node_info: node evaluates to false");
 
-    printf("parent: %s\n",  node->parent ? node->parent->value : "null");
-    printf("value:  %s\n",  node->value);
+    printf("parent: %s\n",  node->parent
+        ? (char *)node->parent->value
+        : "null"
+    );
+
+    printf("value:  %s\n",  (char *)node->value);
     printf("size:   %zu\n", node->size);
 
     return true;

@@ -5,6 +5,8 @@ CFLAGS = -Wall -Wextra \
 
 BUILD_DIR = build
 
+all: str vec node
+
 str: str.c ../str.h
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -ggdb str.c -o $(BUILD_DIR)/str \

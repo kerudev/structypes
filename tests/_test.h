@@ -10,16 +10,16 @@ static char *current_test = NULL;
 static Vec *failed_tests = NULL;
 static bool in_assert_block = false;
 
-static void TEST(const char *name) {
+void TEST(const char *name) {
     current_test = str_clone(name);
 }
 
-static void _test_ok() {
+void _test_ok() {
     printf("[OK ] %s\n", current_test);
     free(current_test);
 }
 
-static void _test_err(const char *msg, ...) {
+void _test_err(const char *msg, ...) {
     va_list args;
     va_start(args, msg);
 
@@ -32,11 +32,11 @@ static void _test_err(const char *msg, ...) {
     vec_push(failed_tests, str_clone(current_test));
 }
 
-static void _test_skip() {
+void _test_skip() {
     fprintf(stderr, "[ X ] %s: test skipped\n", current_test);
 }
 
-static bool _assert(bool b, ...) {
+bool _assert(bool b, ...) {
     if (!b) {
         va_list args;
         va_start(args, b);
@@ -51,7 +51,7 @@ static bool _assert(bool b, ...) {
     return b;
 }
 
-static bool _assert_block(bool *results, size_t total) {
+bool _assert_block(bool *results, size_t total) {
     for (size_t i = 0; i < total; i++)
         if (!results[i]) {
             _test_err("assertion %zu", i);
@@ -61,7 +61,7 @@ static bool _assert_block(bool *results, size_t total) {
     return true;
 }
 
-static bool _assert_arr_str(char **a1, size_t s1, char **a2, size_t s2) {
+bool _assert_arr_str(char **a1, size_t s1, char **a2, size_t s2) {
     if (s1 != s2) {
         _test_err("array sizes are different");
         _test_err("s1 = %zu, s2 = %zu", s1, s2);
@@ -79,7 +79,7 @@ static bool _assert_arr_str(char **a1, size_t s1, char **a2, size_t s2) {
     return true;
 }
 
-static bool _assert_arr_int(int a1[], size_t s1, int a2[], size_t s2) {
+bool _assert_arr_int(int a1[], size_t s1, int a2[], size_t s2) {
     if (s1 != s2) {
         _test_err("array sizes are different");
         _test_err("s1 = %zu, s2 = %zu",s1, s2);
@@ -97,7 +97,7 @@ static bool _assert_arr_int(int a1[], size_t s1, int a2[], size_t s2) {
     return true;
 }
 
-static bool _assert_arr(void *a1, size_t s1, void *a2, size_t s2, char *type) {
+bool _assert_arr(void *a1, size_t s1, void *a2, size_t s2, char *type) {
     if (s1 != s2) {
         _test_err("array sizes are different");
         _test_err("s1 = %zu, s2 = %zu", s1, s2);
@@ -109,7 +109,7 @@ static bool _assert_arr(void *a1, size_t s1, void *a2, size_t s2, char *type) {
         : _assert_arr_int(a1, s1, a2, s2);
 }
 
-static int _test_suite(bool (**tests)(), size_t total) {
+int _test_suite(bool (**tests)(), size_t total) {
     failed_tests = vec_new(sizeof(char *));
 
     printf("running tests (%zu total)\n", total);
@@ -131,20 +131,14 @@ static int _test_suite(bool (**tests)(), size_t total) {
     return 0;
 }
 
-#define ASSERT(b1, b2, ...) ({ \
-    bool ok = _assert((b1 == b2), ##__VA_ARGS__);    \
+#define ASSERT(b, ...) ({ \
+    bool ok = _assert(b, ##__VA_ARGS__);    \
     if (!in_assert_block) return ok;        \
     ok;                                     \
 })
 
 #define ASSERT_ZERO(n, ...) ({ \
     bool ok = _assert(n == 0, ##__VA_ARGS__);    \
-    if (!in_assert_block) return ok;        \
-    ok;                                     \
-})
-
-#define ASSERT_BOOL(b, ...) ({ \
-    bool ok = _assert(b, ##__VA_ARGS__);    \
     if (!in_assert_block) return ok;        \
     ok;                                     \
 })
@@ -163,6 +157,12 @@ static int _test_suite(bool (**tests)(), size_t total) {
 
 #define ASSERT_NULL(cond, ...) ({ \
     bool ok = _assert((cond == NULL), ##__VA_ARGS__);    \
+    if (!in_assert_block) return ok;        \
+    ok;                                     \
+})
+
+#define ASSERT_NOT_NULL(cond, ...) ({ \
+    bool ok = _assert((cond != NULL), ##__VA_ARGS__);    \
     if (!in_assert_block) return ok;        \
     ok;                                     \
 })

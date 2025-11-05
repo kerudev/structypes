@@ -54,6 +54,7 @@ typedef struct {
  *
  * Returns `NULL` when:
  * - `malloc` fails to allocate a new `Node`.
+ * - `node_add` fails to append node to `parent`.
  */
 Node *node_new(Node *parent, void *value);
 
@@ -61,6 +62,7 @@ Node *node_new(Node *parent, void *value);
  * Appends `child` to `parent`.
  *
  * Returns `false` when:
+ * - `parent` or `child` evaluate to false.
  * - `realloc` for `node->nodes` fails.
  */
 bool node_add(Node *parent, Node *child);
@@ -126,6 +128,9 @@ bool node_free(Node *node);
 
 /**
  * Counts the total of child nodes in `node` (doesn't count `node`).
+ *
+ * Returns `0` when:
+ * - `node` evaluates to false.
  */
 size_t node_total(Node *node);
 
@@ -199,7 +204,7 @@ bool node_add(Node *parent, Node *child) {
         THROW(false, "node_add: realloc error");
 
     child->parent = parent;
-        
+
     parent->nodes = tmp;
     parent->nodes[parent->size] = child;
     parent->size++;
@@ -269,14 +274,14 @@ bool node_print_deep(Node *node) {
     size_t local_indent = _indent;
 
     for (size_t i = 0; i < node->size; i++) {
-        Node *node = node->nodes[i];
+        Node *child = node->nodes[i];
 
-        if (node->size > 0) {
-            if (!node_print_deep(node))
+        if (child->size > 0) {
+            if (!node_print_deep(child))
                 THROW(false, "node_print_deep: recursion error");
             _indent = local_indent;
         } else {
-            printf("%*s%s\n", _indent, "", node->value);
+            printf("%*s%s\n", _indent, "", child->value);
         }
     }
 
@@ -306,6 +311,9 @@ bool node_info(Node *node) {
 }
 
 size_t node_total(Node *node) {
+    if (!node)
+        THROW(0, "node_total: node evaluates to false");
+
     size_t total = node->size;
 
     for (size_t i = 0; i < node->size; i++)

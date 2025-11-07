@@ -20,7 +20,7 @@
 
 /**
  * `strlen` replacement.
- * 
+ *
  * Returns the size of `s`.
  *
  * Returns `0` when:
@@ -30,7 +30,7 @@ size_t str_len(char *s);
 
 /**
  * `strdup` replacement.
- * 
+ *
  * Returns a clone of `s`.
  *
  * Returns `NULL` when:
@@ -50,7 +50,7 @@ char str_char_at(char *str, int n);
 
 /**
  * `strtok` replacement.
- * 
+ *
  * Returns the first token encountered in `str` separated by `sep`.
  * Doesn't create a copy of `str`. Its pointer gets advanced on each call.
  *
@@ -245,7 +245,9 @@ char str_char_at(char *str, int n) {
 
 char *__str_tok(char **str, const char *sep) {
     char *tmp = *str;
-    if (!tmp || !*tmp || !sep) return NULL;
+
+    if (!tmp || !*tmp) return NULL;
+    if (!sep) THROW(NULL, "__str_tok: sep evaluates to false");
 
     char *ret = malloc(str_len(tmp) + 1);
     char *token = ret;
@@ -265,14 +267,16 @@ char *__str_tok(char **str, const char *sep) {
 }
 
 char **str_split(char *str, const char *sep, size_t *total) {
-    *total = 0;
-    if (!str || !sep) return NULL;
+    if (!str || !sep)
+        THROW(NULL, "str_split: str or sep evaluate to false");
 
     char *tmp = str_clone(str);
     if (tmp == NULL) THROW(NULL, "str_split: error cloning str");
 
     char **tokens = NULL;
     size_t size = sizeof(char *);
+
+    *total = 0;
 
     char *token;
     while ((token = __str_tok(&tmp, sep))) {
@@ -365,7 +369,7 @@ char *str_concat_arr(char **arr, size_t size) {
 }
 
 #define str_concat(...) \
-    str_concat_arr((char *[]){ __VA_ARGS__ }, sizeof((char *[]){ __VA_ARGS__ }) / sizeof(char *));
+    str_concat_arr((char *[]){ __VA_ARGS__ }, sizeof((char *[]){ __VA_ARGS__ }) / sizeof(char *))
 
 char *str_join_arr(char *joiner, char **arr, size_t size) {
     if (!joiner) THROW(NULL, "str_join_arr: joiner evaluates to false");
@@ -389,7 +393,7 @@ char *str_join_arr(char *joiner, char **arr, size_t size) {
 }
 
 #define str_join(joiner, ...) \
-    str_join_arr(joiner, (char *[]){ __VA_ARGS__ }, sizeof((char *[]){ __VA_ARGS__ }) / sizeof(char *));
+    str_join_arr(joiner, (char *[]){ __VA_ARGS__ }, sizeof((char *[]){ __VA_ARGS__ }) / sizeof(char *))
 
 char *str_ltrim(char *s) {
     if (s == NULL) THROW(NULL, "str_ltrim: s can't be NULL");

@@ -5,7 +5,6 @@
 #include "../str.h"
 
 // TODO free memory on tests
-// TODO __str_tok tests
 
 bool str_len_ok() {
     TEST("str_len_ok");
@@ -79,6 +78,67 @@ bool str_char_at_err_negative_index_oob() {
     ASSERT(str_char_at("abcde", -99) == '\0');
 }
 
+bool __str_tok_ok() {
+    TEST("__str_tok_ok");
+
+    char *str = str_clone("ab/cd/ef");
+    char *sep = "/";
+
+    ASSERT_BLOCK(
+        ASSERT_STR(__str_tok(&str, sep), "ab"),
+        ASSERT_STR(str, "cd/ef"),
+
+        ASSERT_STR(__str_tok(&str, sep), "cd"),
+        ASSERT_STR(str, "ef"),
+
+        ASSERT_STR(__str_tok(&str, sep), "ef"),
+        ASSERT_STR(str, ""),
+    );
+}
+
+bool __str_tok_ok_no_separation() {
+    TEST("__str_tok_ok_no_separation");
+
+    char *str = str_clone("ab");
+    char *sep = "/";
+
+    ASSERT_BLOCK(
+        ASSERT_STR(__str_tok(&str, sep), "ab"),
+        ASSERT_STR(str, ""),
+    );
+}
+
+bool __str_tok_ok_str_is_null() {
+    TEST("__str_tok_ok_str_is_null");
+
+    char *str = NULL;
+    char *sep = "/";
+
+    ASSERT_NULL(__str_tok(&str, sep));
+}
+
+bool __str_tok_ok_str_is_null_after_call() {
+    TEST("__str_tok_ok_str_is_null_after_call");
+
+    char *str = str_clone("ab/cd");
+    char *sep = "/";
+
+    ASSERT_BLOCK(
+        ASSERT_STR(__str_tok(&str, sep), "ab"),
+        ASSERT_STR(__str_tok(&str, sep), "cd"),
+        ASSERT_NULL(__str_tok(&str, sep)),
+    );
+}
+
+bool __str_tok_err_sep_is_null() {
+    TEST("__str_tok_err_sep_is_null");
+
+    char *str = "ab/cd/ef";
+    char *sep = NULL;
+
+    ASSERT_NULL(__str_tok(&str, sep));
+}
+
 bool str_split_ok_one_item() {
     TEST("str_split_ok_one_item");
 
@@ -120,6 +180,20 @@ bool str_split_err_str_is_null() {
     size_t total = 0;
 
     char **result = str_split(str, "/", &total);
+
+    ASSERT_BLOCK(
+        ASSERT_NULL(result),
+        ASSERT_ZERO(total),
+    );
+}
+
+bool str_split_err_sep_is_null() {
+    TEST("str_split_err_sep_is_null");
+
+    char *str = "ab/cd/ef";
+    size_t total = 0;
+
+    char **result = str_split(str, NULL, &total);
 
     ASSERT_BLOCK(
         ASSERT_NULL(result),
@@ -241,18 +315,13 @@ bool str_concat_arr_err_arr_other_is_null() {
 bool str_concat_ok() {
     TEST("str_concat_ok");
 
-    char *result = str_concat("ab", "cd", "ef");
-    char *expected = "abcdef";
-
-    ASSERT_STR(result, expected);
+    ASSERT_STR(str_concat("ab", "cd", "ef"), "abcdef");
 }
 
 bool str_concat_err_first_concat_err() {
     TEST("str_concat_err_first_concat_err");
 
-    char *result = str_concat("ab", NULL, "ef");
-
-    ASSERT_NULL(result);
+    ASSERT_NULL(str_concat("ab", NULL, "ef"));
 }
 
 bool str_join_arr_ok() {
@@ -297,34 +366,25 @@ bool str_join_arr_err_s2_is_null() {
 bool str_join_ok() {
     TEST("str_join_ok");
 
-    char *result = str_join("/", "ab", "cd", "ef");
-    char *expected = "ab/cd/ef";
-
-    ASSERT_STR(result, expected);
+    ASSERT_STR(str_join("/", "ab", "cd", "ef"), "ab/cd/ef");
 }
 
 bool str_join_err_joiner_is_null() {
     TEST("str_join_err_joiner_is_null");
 
-    char *result = str_join(NULL, "ab", "cd", "ef");
-
-    ASSERT_NULL(result);
+    ASSERT_NULL(str_join(NULL, "ab", "cd", "ef"));
 }
 
 bool str_join_err_s1_is_null() {
     TEST("str_join_err_s1_is_null");
 
-    char *result = str_join("/", NULL, "cd", "ef");
-
-    ASSERT_NULL(result);
+    ASSERT_NULL(str_join("/", NULL, "cd", "ef"));
 }
 
 bool str_join_err_s2_is_null() {
     TEST("str_join_err_s2_is_null");
 
-    char *result = str_join("/", "ab", NULL, "ef");
-
-    ASSERT_NULL(result);
+    ASSERT_NULL(str_join("/", "ab", NULL, "ef"));
 }
 
 bool str_ltrim_ok() {
@@ -475,10 +535,18 @@ int main() {
         str_char_at_err_positive_index_oob,
         str_char_at_err_negative_index_oob,
 
+        // __str_tok
+        __str_tok_ok,
+        __str_tok_ok_no_separation,
+        __str_tok_ok_str_is_null,
+        __str_tok_ok_str_is_null_after_call,
+        __str_tok_err_sep_is_null,
+
         // str_split
         str_split_ok_one_item,
         str_split_ok_many_items,
         str_split_err_str_is_null,
+        str_split_err_sep_is_null,
 
         // str_split_first
         str_split_first_ok,

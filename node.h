@@ -50,22 +50,32 @@ typedef struct {
 } NodePrintOpts;
 
 /**
- * Creates a new `Node` with a `parent` and a `value`.
+ * Creates a new `Node` with a `value`.
  *
  * Returns `NULL` when:
  * - `malloc` fails to allocate a new `Node`.
- * - `node_add` fails to append node to `parent`.
  */
-Node *node_new(Node *parent, void *value);
+Node *node_new(void *value);
+
+/**
+ * Creates a new `Node` with a `parent` and a `value`.
+ *
+ * Returns `NULL` when:
+ * - `parent` evaluates to false.
+ * - `node_new` fails to create `node`.
+ * - `node_add_child` fails to append `node` to `parent`.
+ */
+Node *node_add(Node *parent, void *value);
 
 /**
  * Appends `child` to `parent`.
  *
  * Returns `false` when:
  * - `parent` or `child` evaluate to false.
+ * - `parent` points to the same reference as `child`.
  * - `realloc` for `node->nodes` fails.
  */
-bool node_add(Node *parent, Node *child);
+bool node_add_child(Node *parent, Node *child);
 
 /**
  * Same as `node_print_deep`, but with style options.
@@ -176,38 +186,51 @@ static int _comp(const void *a, const void *b) {
     );
 }
 
-Node *node_new(Node *parent, void *value) {
+Node *node_new(void *value) {
     Node *node = malloc(sizeof(Node));
     if (!node)
         THROW(NULL, "node_new: malloc error on initialize root");
 
     node->value = value;
-    node->parent = parent;
+    node->parent = NULL;
     node->nodes = NULL;
     node->size = 0;
-
-    if (parent && !node_add(parent, node))
-        THROW(NULL, "node_new: error adding node to parent");
 
     return node;
 }
 
-bool node_add(Node *parent, Node *child) {
+Node *node_add(Node *parent, void *value) {
     if (!parent)
-        THROW(false, "node_add: parent evaluates to false");
+        THROW(NULL, "node_add: parent evaluates to false");
+
+    Node *node = node_new(value);
+    if (!node)
+        THROW(NULL, "node_add: malloc error on initialize root");
+
+    if (!node_add_child(parent, node))
+        THROW(NULL, "node_add: error adding node to parent");
+
+    return node;
+}
+
+bool node_add_child(Node *parent, Node *child) {
+    if (!parent)
+        THROW(false, "node_add_child: parent evaluates to false");
 
     if (!child)
-        THROW(false, "node_add: child evaluates to false");
+        THROW(false, "node_add_child: child evaluates to false");
+        
+    if (parent == child)
+        THROW(false, "node_add_child: parent points to the same reference as child");
 
     void *tmp = realloc(parent->nodes, (parent->size + 1) * sizeof(Node *));
     if (!tmp)
-        THROW(false, "node_add: realloc error");
+        THROW(false, "node_add_child: realloc error");
 
     child->parent = parent;
 
     parent->nodes = tmp;
-    parent->nodes[parent->size] = child;
-    parent->size++;
+    parent->nodes[parent->size++] = child;
 
     return true;
 }

@@ -1,7 +1,4 @@
 #include "_test.h"
-
-#define STRUCTYPES_IMPLEMENTATION
-#define STRUCTYPES_DEBUG
 #include "../node.h"
 
 // TODO free memory on tests

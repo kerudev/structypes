@@ -219,7 +219,7 @@ bool node_add_child(Node *parent, Node *child) {
 
     if (!child)
         THROW(false, "node_add_child: child evaluates to false");
-        
+
     if (parent == child)
         THROW(false, "node_add_child: parent points to the same reference as child");
 

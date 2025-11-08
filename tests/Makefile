@@ -1,26 +1,22 @@
 CC = gcc
-CFLAGS = -Wall -Wextra \
+CFLAGS = -Wall -Wextra -ggdb \
 	-Wno-return-type \
 	-Wno-discarded-qualifiers
 
 BUILD_DIR = build
 
-all: str vec node
+TESTS = $(wildcard *.c)
+NAMES = $(patsubst %.c, %, $(TESTS))
 
-str: str.c ../str.h
-	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -ggdb str.c -o $(BUILD_DIR)/str \
-		&& ./$(BUILD_DIR)/str
+.PHONY: all clean $(NAMES)
 
-vec: vec.c ../vec.h
-	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -ggdb vec.c -o $(BUILD_DIR)/vec \
-		&& ./$(BUILD_DIR)/vec
+all: $(NAMES)
 
-node: node.c ../node.h
-	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -ggdb node.c -o $(BUILD_DIR)/node \
-		&& ./$(BUILD_DIR)/node
+$(BUILD_DIR):
+	@mkdir -p $@
+
+$(NAMES): %: $(BUILD_DIR)
+	$(CC) $(CFLAGS) $@.c -o $(BUILD_DIR)/$@ && ./$(BUILD_DIR)/$@
 
 clean:
 	rm -rf $(BUILD_DIR)/*

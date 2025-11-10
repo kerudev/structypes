@@ -1,8 +1,10 @@
 // node.h - A node implementation.
 //
-// Useful macros:
+// Library macros:
 // - STRUCTYPES_IMPLEMENTATION: defines all of structype's implementations.
 // - STRUCTYPES_DEBUG: if defined, prints error messages.
+//
+// File macros:
 // - NODE_IMPLEMENTATION: implementations of node functions.
 
 #ifndef NODE_H_

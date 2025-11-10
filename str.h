@@ -1,8 +1,10 @@
 // str.h - Utilities for string manipulation.
 //
-// Useful macros:
+// Library macros:
 // - STRUCTYPES_IMPLEMENTATION: defines all of structype's implementations.
 // - STRUCTYPES_DEBUG: if defined, prints error messages.
+//
+// File macros:
 // - STR_IMPLEMENTATION: implementations of string functions.
 //
 // Function macros:
@@ -35,7 +37,7 @@ size_t str_len(char *s);
  *
  * Returns `NULL` when:
  * - `s` evaluates to false.
- * - `malloc` fails.
+ * - `malloc` fails to allocate a copy of `s`.
  */
 char *str_clone(char *s);
 
@@ -44,7 +46,7 @@ char *str_clone(char *s);
  * Creates a copy of `str` so it isn't mutated.
  *
  * Returns `\0` when:
- * - `n > str_len(str)`
+ * - `n > str_len(str)`.
  */
 char str_char_at(char *str, int n);
 
@@ -116,6 +118,7 @@ char *__str_concat(char *s1, char *s2);
  *
  * Returns `NULL` when:
  * - `arr` or `size` evaluate to false.
+ * - Any of the passed strings is `NULL`.
  * - `str_clone` or `__str_concat` fail.
  */
 char *str_concat_arr(char **arr, size_t size);
@@ -134,7 +137,7 @@ char *str_join_arr(char *joiner, char **arr, size_t size);
  * Does not create a copy of `s`.
  *
  * Returns `NULL` when:
- * - `s` is `NULL`
+ * - `s` is `NULL`.
  */
 char *str_ltrim(char *s);
 
@@ -143,7 +146,7 @@ char *str_ltrim(char *s);
  * Does not create a copy of `s`.
  *
  * Returns `NULL` when:
- * - `s` is `NULL`
+ * - `s` is `NULL`.
  */
 char *str_rtrim(char *s);
 
@@ -152,7 +155,7 @@ char *str_rtrim(char *s);
  * Does not create a copy of `s`.
  *
  * Returns `NULL` when:
- * - `s` is `NULL`
+ * - `s` is `NULL`.
  */
 char *str_trim(char *s);
 
@@ -160,8 +163,8 @@ char *str_trim(char *s);
  * Returns a boolean value indicating whether `s1` is the same as `s2`.
  *
  * Returns `false` when:
- * - `s1` is `NULL`
- * - `s2` is `NULL`
+ * - `s1` is `NULL`.
+ * - `s2` is `NULL`.
  */
 bool str_eq(char *s1, char *s2);
 
@@ -183,8 +186,8 @@ bool str_eq(char *s1, char *s2);
  *   - `str_diff("abc", "def") == -3`
  *
  * Returns `-1` when:
- * - `s1` is `NULL`
- * - `s2` is `NULL`
+ * - `s1` is `NULL`.
+ * - `s2` is `NULL`.
  */
 int str_diff(char *s1, char *s2);
 
@@ -213,6 +216,24 @@ static void _str_err(char *msg, ...) {
 #else
 #define THROW(ret, msg, ...) ({ return ret; })
 #endif
+
+/**
+ * Concatenates all strings passed and returns the result.
+ *
+ * Returns `NULL` when:
+ * - `str_concat_arr` fails.
+ */
+#define str_concat(...) \
+    str_concat_arr((char *[]){ __VA_ARGS__ }, sizeof((char *[]){ __VA_ARGS__ }) / sizeof(char *))
+
+/**
+ * Returns a string that joins all elements in arr using joiner.
+ *
+ * Returns `NULL` when:
+ * - `str_join_arr` fails.
+ */
+#define str_join(joiner, ...) \
+    str_join_arr(joiner, (char *[]){ __VA_ARGS__ }, sizeof((char *[]){ __VA_ARGS__ }) / sizeof(char *))
 
 size_t str_len(char *s) {
     if (!s) THROW(0, "str_len: s evaluates to false");
@@ -368,9 +389,6 @@ char *str_concat_arr(char **arr, size_t size) {
     return buf;
 }
 
-#define str_concat(...) \
-    str_concat_arr((char *[]){ __VA_ARGS__ }, sizeof((char *[]){ __VA_ARGS__ }) / sizeof(char *))
-
 char *str_join_arr(char *joiner, char **arr, size_t size) {
     if (!joiner) THROW(NULL, "str_join_arr: joiner evaluates to false");
     if (!arr) THROW(NULL, "str_join_arr: arr evaluates to false");
@@ -391,9 +409,6 @@ char *str_join_arr(char *joiner, char **arr, size_t size) {
 
     return buf;
 }
-
-#define str_join(joiner, ...) \
-    str_join_arr(joiner, (char *[]){ __VA_ARGS__ }, sizeof((char *[]){ __VA_ARGS__ }) / sizeof(char *))
 
 char *str_ltrim(char *s) {
     if (s == NULL) THROW(NULL, "str_ltrim: s can't be NULL");

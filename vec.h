@@ -1,10 +1,15 @@
 // vec.h - A vector implementation that stores generic pointers.
 //
-// Useful macros:
+// Library macros:
 // - STRUCTYPES_IMPLEMENTATION: defines all of structype's implementations.
 // - STRUCTYPES_DEBUG: if defined, prints error messages.
+//
+// File macros:
 // - VEC_IMPLEMENTATION: implementations of the Vec structure.
 // - VEC_CAPACITY_STEP: used to initialize and realloc the Vec's capacity.
+//
+// Function macros:
+// - vec_get_as(v, i, type)
 
 #ifndef VEC_H_
 #define VEC_H_
@@ -32,9 +37,10 @@ typedef struct Vec {
  * Creates a new `Vec`. Uses `offset` to `malloc` items.
  *
  * Returns `NULL` when:
- * - `VEC_CAPACITY_STEP < 1`
- * - `malloc` for `Vec` fails
- * - `malloc` for `Vec.items` fails
+ * - `capacity < 1`.
+ * - `VEC_CAPACITY_STEP < 1`.
+ * - `malloc` fails to allocate a new `Vec`.
+ * - `malloc` fails to initialize `Vec.items`.
  */
 Vec *vec_new(size_t offset);
 
@@ -58,8 +64,8 @@ bool vec_free_deep(Vec *v);
  * Adds an `item` at the end of `v->items`.
  *
  * Returns `false` when:
- * - `VEC_CAPACITY_STEP < 1`
- * - `realloc` for `v->items` fails
+ * - `VEC_CAPACITY_STEP < 1`.
+ * - `realloc` for `v->items` fails.
  */
 bool vec_push(Vec *v, void *item);
 
@@ -67,9 +73,9 @@ bool vec_push(Vec *v, void *item);
  * Adds `src->items` at the end of `dst->items`.
  *
  * Returns `false` when:
- * - `size->size == 0`
- * - `dst->offset != src->offset`
- * - `realloc` for `dst->items` fails
+ * - `size->size == 0`.
+ * - `dst->offset != src->offset`.
+ * - `realloc` for `dst->items` fails.
  */
 bool vec_extend(Vec *dst, Vec *src);
 
@@ -77,8 +83,8 @@ bool vec_extend(Vec *dst, Vec *src);
  * Returns a pointer to the element at `index`.
  *
  * Returns `NULL` when:
- * - `index` is out of bounds
- * - `v->size == 0`
+ * - `index` is out of bounds.
+ * - `v->size == 0`.
  */
 void *vec_get(Vec *v, size_t index);
 
@@ -86,25 +92,16 @@ void *vec_get(Vec *v, size_t index);
  * Returns a pointer to the element's value at `index`.
  *
  * Returns `NULL` when:
- * - `index` is out of bounds
- * - `v->size == 0`
+ * - `index` is out of bounds.
+ * - `v->size == 0`.
  */
 void *vec_get_ptr(Vec *v, size_t index);
-
-/**
- * Returns the value at `i` casted to `type`.
- * If `vec_get` returns `NULL`, it won't be cast to prevent undefined behaviour.
- */
-#define vec_get_as(v, i, type) ({   \
-    void *_tmp = vec_get((v), (i)); \
-    (_tmp) ? *(type *)_tmp : NULL;  \
-})
 
 /**
  * Prints each item in `v`.
  *
  * Returns `false` when:
- * - `v->size == 0`
+ * - `v->size == 0`.
  */
 bool vec_print(Vec *v);
 
@@ -137,6 +134,15 @@ static void _vec_err(char *msg, ...) {
 #else
 #define THROW(ret, msg, ...) ({ return ret; })
 #endif
+
+/**
+ * Returns the value at `i` casted to `type`.
+ * If `vec_get` returns `NULL`, it won't be cast to prevent undefined behaviour.
+ */
+#define vec_get_as(v, i, type) ({   \
+    void *_tmp = vec_get((v), (i)); \
+    (_tmp) ? *(type *)_tmp : NULL;  \
+})
 
 Vec *vec_new(size_t offset) {
     if (offset < 1)

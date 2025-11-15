@@ -3,12 +3,15 @@
 // Library macros:
 // - STRUCTYPES_IMPLEMENTATION: defines all of structype's implementations.
 // - STRUCTYPES_DEBUG: if defined, prints error messages.
-// - HASHMAP_IMPLEMENTATION: implementations of node functions.
 //
 // File macros:
-// - HASHMAP_CAPACITY_STEP: 
-// - HASHMAP_LOAD_FACTOR: 
-// - HASHMAP_HASH_FUNC: 
+// - HASHMAP_IMPLEMENTATION: implementations of node functions.
+// - HASHMAP_CAPACITY_STEP: how much the capacity will increment on resize.
+//   By default, `1028`.
+// - HASHMAP_LOAD_FACTOR: when `hm->size / hm->capacity > HASHMAP_LOAD_FACTOR`,
+//   `hm` will be resized. By default, `0.75`.
+// - HASHMAP_HASH_ALGORITHM: reference of the hashing algorithm.
+//   By default, `djb2`.
 //
 // Function macros:
 // - hashmap_hash
@@ -27,7 +30,7 @@ typedef struct {
 } HM_KV;
 
 typedef struct {
-    HM_KV *items;
+    HM_KV **items;
     size_t size;
     size_t capacity;
 } HashMap;
@@ -51,6 +54,23 @@ HashMap *hashmap_new(size_t capacity);
  * - `malloc` fails to allocate a new `HM_KV`.
  */
 HM_KV *hashmap_new_kv(char *k, void *v);
+
+/**
+ * Frees a `HashMap` and its `HM_KV`.
+ * 
+ * Returns `false` when:
+ * - `hm` evaluates to false.
+ * - `hashmap_free_kv` fails.
+ */
+bool hashmap_free(HashMap *hm);
+
+/**
+ * Frees a `HM_KV`.
+ *
+ * Returns `false` when:
+ * - `kv` evaluates to false.
+ */
+bool hashmap_free_kv(HM_KV *kv);
 
 /**
  * Returns a `HM_KV` based on the hash of `k`.
@@ -104,9 +124,9 @@ bool hashmap_resize(HashMap *hm, size_t capacity);
 #define HASHMAP_LOAD_FACTOR 0.75
 #endif // HASHMAP_LOAD_FACTOR
 
-#ifndef HASHMAP_HASH_FUNC
-#define HASHMAP_HASH_FUNC djb2
-#endif // HASHMAP_HASH_FUNC
+#ifndef HASHMAP_HASH_ALGORITHM
+#define HASHMAP_HASH_ALGORITHM djb2
+#endif // HASHMAP_HASH_ALGORITHM
 
 #ifdef STRUCTYPES_DEBUG
 static void _hashmap_err(char *msg, ...) {
@@ -122,10 +142,10 @@ static void _hashmap_err(char *msg, ...) {
 #endif
 
 /**
- * Hashes a key using `HASHMAP_HASH_FUNC`, then takes the modulo of `capacity`.
+ * Hashes a key using `HASHMAP_HASH_ALGORITHM`, then takes the modulo of `capacity`.
  */
 #define hashmap_hash(k, capacity) \
-    HASHMAP_HASH_FUNC((unsigned char *)k) % capacity;
+    HASHMAP_HASH_ALGORITHM((unsigned char *)k) % capacity;
 
 unsigned long djb2(unsigned char *str) {
     unsigned long hash = 5381;
@@ -168,6 +188,29 @@ HM_KV *hashmap_new_kv(char *k, void *v) {
     kv->value = v;
 
     return kv;
+}
+
+bool hashmap_free(HashMap *hm) {
+    if (!hm) THROW(false, "hashmap_free: hm evaluates to false");
+
+    for (size_t i = 0; i < hm->size; i++)
+        if (!hashmap_free_kv(hm->items[i]))
+            THROW(false, "hashmap_free: error freeing kv");
+
+    free(hm->items);
+
+    return true;
+}
+
+bool hashmap_free_kv(HM_KV *kv) {
+    if (!kv) THROW(false, "hashmap_free_kv: kv evaluates to false");
+
+    if (kv->value) free(kv->value);
+
+    free(kv->key);
+    free(kv);
+
+    return true;
 }
 
 HM_KV *hashmap_get(HashMap *hm, char *k) {

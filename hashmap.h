@@ -27,10 +27,10 @@
 typedef struct {
     char *key;
     void *value;
-} HM_KV;
+} KV;
 
 typedef struct {
-    HM_KV **items;
+    KV **items;
     size_t size;
     size_t capacity;
 } HashMap;
@@ -47,16 +47,16 @@ typedef struct {
 HashMap *hashmap_new(size_t capacity);
 
 /**
- * Creates a new `HM_KV`.
+ * Creates a new `KV`.
  *
  * Returns `NULL` when:
  * - `k` is `NULL`.
- * - `malloc` fails to allocate a new `HM_KV`.
+ * - `malloc` fails to allocate a new `KV`.
  */
-HM_KV *hashmap_new_kv(char *k, void *v);
+KV *hashmap_new_kv(char *k, void *v);
 
 /**
- * Frees a `HashMap` and its `HM_KV`.
+ * Frees a `HashMap` and its `KV`.
  * 
  * Returns `false` when:
  * - `hm` evaluates to false.
@@ -65,25 +65,25 @@ HM_KV *hashmap_new_kv(char *k, void *v);
 bool hashmap_free(HashMap *hm);
 
 /**
- * Frees a `HM_KV`.
+ * Frees a `KV`.
  *
  * Returns `false` when:
  * - `kv` evaluates to false.
  */
-bool hashmap_free_kv(HM_KV *kv);
+bool hashmap_free_kv(KV *kv);
 
 /**
- * Returns a `HM_KV` based on the hash of `k`.
+ * Returns the value stored under `k`.
  *
  * Returns `NULL` when:
  * - `hm` evaluates to false.
  * - `hm->items` evaluates to false.
  * - `hm->size` is 0.
  */
-HM_KV *hashmap_get(HashMap *hm, char *k);
+void *hashmap_get(HashMap *hm, char *k);
 
 /**
- * Creates a new `HM_KV` using `k` and `v`, and saves it into `hm->items`.
+ * Creates a new `KV` using `k` and `v`, and saves it into `hm->items`.
  *
  * Returns `false` when:
  * - `hm` evaluates to false.
@@ -92,22 +92,13 @@ HM_KV *hashmap_get(HashMap *hm, char *k);
 bool hashmap_set(HashMap *hm, char *k, void *v);
 
 /**
- * Saves `kv` into `hm->items`.
- *
- * Returns `false` when:
- * - `kv` evaluates to false.
- * - `hashmap_set` fails.
- */
-bool hashmap_set_kv(HashMap *hm, HM_KV *kv);
-
-/**
  * Creates a new `HashMap` with `capacity` and rehashes all pairs.
  *
  * Returns `false` when:
  * - `hm` or `hm->items` evaluate to false. 
  * - `hm->size` is 0.
  * - `capacity` is 0
- * - `hashmap_new` or `hashmap_set_kv` fail.
+ * - `hashmap_new` or `hashmap_set` fail.
  */
 bool hashmap_resize(HashMap *hm, size_t capacity);
 
@@ -170,18 +161,18 @@ HashMap *hashmap_new(size_t capacity) {
     if (HASHMAP_LOAD_FACTOR < 0 || 1 < HASHMAP_LOAD_FACTOR)
         THROW(NULL, "hashmap_new: HASHMAP_LOAD_FACTOR must be between 0 and 1");
 
-    hm->items = NULL;
     hm->size = 0;
     hm->capacity = capacity;
+    hm->items = malloc(hm->capacity * sizeof(KV *));
 
     return hm;
 }
 
-HM_KV *hashmap_new_kv(char *k, void *v) {
+KV *hashmap_new_kv(char *k, void *v) {
     if (k == NULL)
         THROW(NULL, "hashmap_new_kv: k can't be NULL");
 
-    HM_KV *kv = malloc(sizeof(HM_KV));
+    KV *kv = malloc(sizeof(KV));
     if (!kv) THROW(NULL, "hashmap_new_kv: malloc error on initialize kv");
 
     kv->key = k;
@@ -202,7 +193,7 @@ bool hashmap_free(HashMap *hm) {
     return true;
 }
 
-bool hashmap_free_kv(HM_KV *kv) {
+bool hashmap_free_kv(KV *kv) {
     if (!kv) THROW(false, "hashmap_free_kv: kv evaluates to false");
 
     if (kv->value) free(kv->value);
@@ -213,18 +204,24 @@ bool hashmap_free_kv(HM_KV *kv) {
     return true;
 }
 
-HM_KV *hashmap_get(HashMap *hm, char *k) {
+void *hashmap_get(HashMap *hm, char *k) {
     if (!hm) THROW(NULL, "hashmap_get: hm evaluates to false");
-    if (!hm->items) THROW(NULL, "hashmap_get: items evaluates to false");
     if (!hm->size) THROW(NULL, "hashmap_get: hashmap is uninitialized");
+    if (!hm->capacity) THROW(NULL, "hashmap_get: capacity can't be 0");
+    if (!hm->items) THROW(NULL, "hashmap_get: items evaluates to false");
+    if (k == NULL) THROW(NULL, "hashmap_get: k can't be null");
 
     unsigned long hash = hashmap_hash(k, hm->capacity);
-    return ((void**)hm->items)[hash];
+    KV *kv = ((void**)hm->items)[hash];
+
+    return kv->value;
 }
 
 bool hashmap_set(HashMap *hm, char *k, void *v) {
     if (!hm) THROW(false, "hashmap_set: hm evaluates to false");
+    if (!hm->capacity) THROW(false, "hashmap_set: capacity can't be 0");
     if (!hm->items) THROW(false, "hashmap_set: items evaluates to false");
+    if (k == NULL) THROW(NULL, "hashmap_set: k can't be null");
 
     if (hm->size / hm->capacity > HASHMAP_LOAD_FACTOR)
         if (!hashmap_resize(hm, hm->capacity + HASHMAP_CAPACITY_STEP))
@@ -236,15 +233,11 @@ bool hashmap_set(HashMap *hm, char *k, void *v) {
     return true;
 }
 
-bool hashmap_set_kv(HashMap *hm, HM_KV *kv) {
-    if (!kv) THROW(false, "hashmap_set_kv: kv evaluates to false");
-    return hashmap_set(hm, kv->key, kv->value);
-}
-
 bool hashmap_resize(HashMap *hm, size_t capacity) {
     if (!hm) THROW(false, "hashmap_resize: hm evaluates to false");
-    if (!hm->items) THROW(false, "hashmap_resize: items evaluates to false");
     if (!hm->size) THROW(false, "hashmap_resize: hashmap is uninitialized");
+    if (!hm->capacity) THROW(false, "hashmap_resize: capacity can't be 0");
+    if (!hm->items) THROW(false, "hashmap_resize: items evaluates to false");
     if (!capacity) THROW(false, "hashmap_resize: capacity can't be 0");
 
     HashMap *tmp = hashmap_new(capacity);
@@ -253,10 +246,10 @@ bool hashmap_resize(HashMap *hm, size_t capacity) {
     void **array = (void**)hm->items;
 
     for (size_t i = 0; i < hm->capacity; i++) {
-        HM_KV *kv = array[i];
+        KV *kv = array[i];
         if (!kv) continue;
 
-        if (!hashmap_set_kv(tmp, kv))
+        if (!hashmap_set(tmp, kv->key, kv->value))
             THROW(false, "hashmap_resize: rehash fail");
     }
 

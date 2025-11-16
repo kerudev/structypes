@@ -77,8 +77,10 @@ bool hashmap_free_kv(KV *kv);
  *
  * Returns `NULL` when:
  * - `hm` evaluates to false.
- * - `hm->items` evaluates to false.
  * - `hm->size` is 0.
+ * - `hm->capacity` is 0.
+ * - `hm->items` evaluates to false.
+ * - `k` is `NULL`.
  */
 void *hashmap_get(HashMap *hm, char *k);
 
@@ -87,7 +89,10 @@ void *hashmap_get(HashMap *hm, char *k);
  *
  * Returns `false` when:
  * - `hm` evaluates to false.
+ * - `hm->capacity` is 0.
  * - `hm->items` evaluates to false.
+ * - `k` is `NULL`.
+ * - `hashmap_resize` fails (called when the load factor is surpassed).
  */
 bool hashmap_set(HashMap *hm, char *k, void *v);
 
@@ -95,9 +100,11 @@ bool hashmap_set(HashMap *hm, char *k, void *v);
  * Creates a new `HashMap` with `capacity` and rehashes all pairs.
  *
  * Returns `false` when:
- * - `hm` or `hm->items` evaluate to false. 
- * - `hm->size` is 0.
- * - `capacity` is 0
+ * - `capacity` is 0.
+ * - `hm` evaluates to false.
+ * - `hm->capacity` is 0.
+ * - `hm->items` evaluates to false.
+ * - `hm->size > capacity`.
  * - `hashmap_new` or `hashmap_set` fail.
  */
 bool hashmap_resize(HashMap *hm, size_t capacity);
@@ -234,11 +241,14 @@ bool hashmap_set(HashMap *hm, char *k, void *v) {
 }
 
 bool hashmap_resize(HashMap *hm, size_t capacity) {
+    if (!capacity) THROW(false, "hashmap_resize: capacity can't be 0");
+
     if (!hm) THROW(false, "hashmap_resize: hm evaluates to false");
-    if (!hm->size) THROW(false, "hashmap_resize: hashmap is uninitialized");
     if (!hm->capacity) THROW(false, "hashmap_resize: capacity can't be 0");
     if (!hm->items) THROW(false, "hashmap_resize: items evaluates to false");
-    if (!capacity) THROW(false, "hashmap_resize: capacity can't be 0");
+
+    if (hm->size > capacity)
+        THROW(false, "hashmap_resize: new capacity can't be less than current size");
 
     HashMap *tmp = hashmap_new(capacity);
     if (!tmp) THROW(false, "hashmap_resize: error creating new HashMap");

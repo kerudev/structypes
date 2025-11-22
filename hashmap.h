@@ -57,7 +57,7 @@ KV *hashmap_new_kv(char *k, void *v);
 
 /**
  * Frees a `HashMap` and its `KV`.
- * 
+ *
  * Returns `false` when:
  * - `hm` evaluates to false.
  * - `hashmap_free_kv` fails.
@@ -191,11 +191,20 @@ KV *hashmap_new_kv(char *k, void *v) {
 bool hashmap_free(HashMap *hm) {
     if (!hm) THROW(false, "hashmap_free: hm evaluates to false");
 
-    for (size_t i = 0; i < hm->size; i++)
+    for (size_t i = 0; i < hm->capacity; i++) {
+        if (!hm->size) break;
+        if (!hm->items[i]) continue;
+
         if (!hashmap_free_kv(hm->items[i]))
             THROW(false, "hashmap_free: error freeing kv");
 
-    free(hm->items);
+        hm->size--;
+    }
+
+    // TODO fix memory leak
+    // free(hm->items);
+
+    free(hm);
 
     return true;
 }
@@ -219,9 +228,8 @@ void *hashmap_get(HashMap *hm, char *k) {
     if (k == NULL) THROW(NULL, "hashmap_get: k can't be null");
 
     unsigned long hash = hashmap_hash(k, hm->capacity);
-    KV *kv = ((void**)hm->items)[hash];
 
-    return kv->value;
+    return hm->items[hash]->value;
 }
 
 bool hashmap_set(HashMap *hm, char *k, void *v) {
@@ -230,12 +238,14 @@ bool hashmap_set(HashMap *hm, char *k, void *v) {
     if (!hm->items) THROW(false, "hashmap_set: items evaluates to false");
     if (k == NULL) THROW(NULL, "hashmap_set: k can't be null");
 
-    if (hm->size / hm->capacity > HASHMAP_LOAD_FACTOR)
+    if (hm->size / hm->capacity >= HASHMAP_LOAD_FACTOR)
         if (!hashmap_resize(hm, hm->capacity + HASHMAP_CAPACITY_STEP))
             THROW(false, "hashmap_set: resize error");
 
     unsigned long hash = hashmap_hash(k, hm->capacity);
-    ((void**)hm->items)[hash] = hashmap_new_kv(k, v);
+    hm->items[hash] = hashmap_new_kv(k, v);
+
+    hm->size++;
 
     return true;
 }
@@ -253,20 +263,20 @@ bool hashmap_resize(HashMap *hm, size_t capacity) {
     HashMap *tmp = hashmap_new(capacity);
     if (!tmp) THROW(false, "hashmap_resize: error creating new HashMap");
 
-    void **array = (void**)hm->items;
+    if (hm->size) {
+        for (size_t i = 0; i < hm->capacity; i++) {
+            if (!hm->items[i]) continue;
 
-    for (size_t i = 0; i < hm->capacity; i++) {
-        KV *kv = array[i];
-        if (!kv) continue;
-
-        if (!hashmap_set(tmp, kv->key, kv->value))
-            THROW(false, "hashmap_resize: rehash fail");
+            if (!hashmap_set(tmp, hm->items[i]->key, hm->items[i]->value))
+                THROW(false, "hashmap_resize: rehash fail");
+        }
     }
 
     free(hm->items);
 
     hm->items = tmp->items;
     hm->capacity = tmp->capacity;
+    hm->size = tmp->size;
 
     free(tmp);
 

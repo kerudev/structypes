@@ -55,12 +55,27 @@ bool hashmap_free_ok() {
 
     HashMap *hm = hashmap_new(HASHMAP_CAPACITY_STEP);
 
-    hashmap_set(hm, "red",      "cherry");
-    hashmap_set(hm, "orange",   "tangerine");
-    hashmap_set(hm, "yellow",   "banana");
-    hashmap_set(hm, "green",    "apple");
-    hashmap_set(hm, "blue",     "blueberry");
-    hashmap_set(hm, "purple",   "grape");
+    hashmap_set(hm, str_clone("red"),    str_clone("cherry"));
+    hashmap_set(hm, str_clone("orange"), str_clone("tangerine"));
+    hashmap_set(hm, str_clone("yellow"), str_clone("banana"));
+    hashmap_set(hm, str_clone("green"),  str_clone("apple"));
+    hashmap_set(hm, str_clone("blue"),   str_clone("blueberry"));
+    hashmap_set(hm, str_clone("purple"), str_clone("grape"));
+
+    ASSERT_TRUE(hashmap_free(hm));
+}
+
+bool hashmap_free_ok_value_is_null() {
+    TEST("hashmap_free_ok_value_is_null");
+
+    HashMap *hm = hashmap_new(HASHMAP_CAPACITY_STEP);
+
+    hashmap_set(hm, str_clone("red"),    NULL);
+    hashmap_set(hm, str_clone("orange"), NULL);
+    hashmap_set(hm, str_clone("yellow"), NULL);
+    hashmap_set(hm, str_clone("green"),  NULL);
+    hashmap_set(hm, str_clone("blue"),   NULL);
+    hashmap_set(hm, str_clone("purple"), NULL);
 
     ASSERT_TRUE(hashmap_free(hm));
 }
@@ -73,8 +88,8 @@ bool hashmap_free_err_hm_is_null() {
 
 bool hashmap_free_kv_ok() {
     TEST("hashmap_free_kv_ok");
-    
-    KV *kv = hashmap_new_kv("red", "cherry");
+
+    KV *kv = hashmap_new_kv(str_clone("red"), str_clone("cherry"));
 
     ASSERT_TRUE(hashmap_free_kv(kv));
 }
@@ -82,7 +97,7 @@ bool hashmap_free_kv_ok() {
 bool hashmap_free_kv_ok_v_is_null() {
     TEST("hashmap_free_kv_ok_v_is_null");
 
-    KV *kv = hashmap_new_kv("red", NULL);
+    KV *kv = hashmap_new_kv(str_clone("red"), NULL);
 
     ASSERT_TRUE(hashmap_free_kv(kv));
 }
@@ -123,7 +138,7 @@ bool hashmap_get_err_hm_is_null() {
 
 bool hashmap_get_err_hm_size_is_0() {
     TEST("hashmap_get_err_hm_size_is_0");
-    
+
     HashMap *hm = hashmap_new(HASHMAP_CAPACITY_STEP);
 
     ASSERT_NULL(hashmap_get(hm, "red"));
@@ -133,7 +148,9 @@ bool hashmap_get_err_hm_items_is_null() {
     TEST("hashmap_get_err_hm_items_is_null");
 
     HashMap *hm = hashmap_new(HASHMAP_CAPACITY_STEP);
-    hm->size = 1;
+
+    free(hm->items);
+    hm->items = NULL;
 
     ASSERT_NULL(hashmap_get(hm, "red"));
 }
@@ -170,14 +187,14 @@ bool hashmap_set_ok_after_resize() {
 
     HashMap *hm = hashmap_new(1);
 
-    ASSERT_BLOCK(
-        ASSERT_TRUE(hashmap_set(hm, "red",    "cherry")),
-        ASSERT_TRUE(hashmap_set(hm, "orange", "tangerine")),
-        ASSERT_TRUE(hashmap_set(hm, "yellow", "banana")),
-        ASSERT_TRUE(hashmap_set(hm, "green",  "apple")),
-        ASSERT_TRUE(hashmap_set(hm, "blue",   "blueberry")),
-        ASSERT_TRUE(hashmap_set(hm, "purple", "grape")),
+    if (!hashmap_set(hm, "red",    "cherry"))    ASSERT(false);
+    if (!hashmap_set(hm, "orange", "tangerine")) ASSERT(false);
+    if (!hashmap_set(hm, "yellow", "banana"))    ASSERT(false);
+    if (!hashmap_set(hm, "green",  "apple"))     ASSERT(false);
+    if (!hashmap_set(hm, "blue",   "blueberry")) ASSERT(false);
+    if (!hashmap_set(hm, "purple", "grape"))     ASSERT(false);
 
+    ASSERT_BLOCK(
         ASSERT(hm->size == 6),
         ASSERT(hm->capacity == 1 + HASHMAP_CAPACITY_STEP),
     );
@@ -248,17 +265,10 @@ bool hashmap_resize_ok_hm_size_is_0() {
     HashMap *hm = hashmap_new(HASHMAP_CAPACITY_STEP);
 
     ASSERT_BLOCK(
-        ASSERT_FALSE(hashmap_resize(hm, hm->capacity * 2)),
+        ASSERT_TRUE(hashmap_resize(hm, hm->capacity * 2)),
 
         ASSERT_ZERO(hm->size),
         ASSERT(hm->capacity == HASHMAP_CAPACITY_STEP * 2),
-
-        ASSERT_STR(hashmap_get(hm, "red"),    "cherry"),
-        ASSERT_STR(hashmap_get(hm, "orange"), "tangerine"),
-        ASSERT_STR(hashmap_get(hm, "yellow"), "banana"),
-        ASSERT_STR(hashmap_get(hm, "green"),  "apple"),
-        ASSERT_STR(hashmap_get(hm, "blue"),   "blueberry"),
-        ASSERT_STR(hashmap_get(hm, "purple"), "grape"),
     );
 }
 
@@ -280,6 +290,7 @@ bool hashmap_resize_err_hm_capacity_is_0() {
     TEST("hashmap_resize_err_hm_capacity_is_0");
 
     HashMap *hm = hashmap_new(HASHMAP_CAPACITY_STEP);
+    hm->capacity = 0;
 
     ASSERT_FALSE(hashmap_resize(hm, HASHMAP_CAPACITY_STEP));
 }
@@ -296,7 +307,10 @@ bool hashmap_resize_err_hm_items_is_null() {
 bool hashmap_resize_err_hm_size_gt_new_capacity() {
     TEST("hashmap_resize_err_hm_size_gt_new_capacity");
 
-    ASSERT(false);
+    HashMap *hm = hashmap_new(HASHMAP_CAPACITY_STEP);
+    hm->size = 99;
+
+    ASSERT_FALSE(hashmap_resize(hm, 0));
 }
 
 int main() {
@@ -312,6 +326,7 @@ int main() {
 
         // hashmap_free
         hashmap_free_ok,
+        hashmap_free_ok_value_is_null,
         hashmap_free_err_hm_is_null,
 
         // hashmap_free_kv

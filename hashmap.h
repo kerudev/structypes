@@ -109,6 +109,58 @@ bool hashmap_set(HashMap *hm, char *k, void *v);
  */
 bool hashmap_resize(HashMap *hm, size_t capacity);
 
+/**
+ * Returns all `kv->key` in `hm->items`.
+ * 
+ * Returns `NULL` when:
+ * - `hm` evaluates to false.
+ * - `hm->size` is 0.
+ * - `hm->capacity` is 0.
+ * - `hm->items` evaluates to false.
+ * - `malloc` fails to allocate a new `char **`.
+ */
+char **hashmap_keys(HashMap *hm);
+
+/**
+ * Returns all `kv->value` in `hm->items`.
+ * 
+ * Returns `NULL` when:
+ * - `hm` evaluates to false.
+ * - `hm->size` is 0.
+ * - `hm->capacity` is 0.
+ * - `hm->items` evaluates to false.
+ * - `malloc` fails to allocate a new `void **`.
+ */
+void **hashmap_values(HashMap *hm);
+
+/**
+ * Returns all `kv` in `hm->items`.
+ * 
+ * Returns `NULL` when:
+ * - `hm` evaluates to false.
+ * - `hm->size` is 0.
+ * - `hm->capacity` is 0.
+ * - `hm->items` evaluates to false.
+ * - `malloc` fails to allocate a new `KV **`.
+ */
+KV **hashmap_items(HashMap *hm);
+
+/**
+ * Prints the `size` and `capacity` from `hm`.
+ * 
+ * Returns `false` when:
+ * - `hm` evaluates to false.
+ */
+bool hashmap_info(HashMap *hm);
+
+/**
+ * Prints the `key` and `value` from `kv`.
+ * 
+ * Returns `false` when:
+ * - `kv` evaluates to false.
+ */
+bool hashmap_info_kv(KV *kv);
+
 #endif // HASHMAP_H_
 
 #if !defined(__HASHMAP_IMPLEMENTED) && (defined(STRUCTYPES_IMPLEMENTATION) || defined(HASHMAP_IMPLEMENTATION))
@@ -279,6 +331,78 @@ bool hashmap_resize(HashMap *hm, size_t capacity) {
     hm->size = tmp->size;
 
     free(tmp);
+
+    return true;
+}
+
+char **hashmap_keys(HashMap *hm) {
+    if (!hm) THROW(NULL, "hashmap_keys: hm evaluates to false");
+    if (!hm->size) THROW(NULL, "hashmap_keys: hashmap is uninitialized");
+    if (!hm->capacity) THROW(NULL, "hashmap_keys: capacity can't be 0");
+    if (!hm->items) THROW(NULL, "hashmap_keys: items evaluates to false");
+
+    char **keys = malloc(hm->size * sizeof(char *));
+    if (!keys) THROW(NULL, "hashmap_keys: malloc error");
+
+    size_t i = 0;
+    for (size_t j = 0; j < hm->capacity; j++) {
+        if (!hm->items[j]) continue;
+        keys[i++] = hm->items[j]->key;
+    }
+
+    return keys;
+}
+
+void **hashmap_values(HashMap *hm) {
+    if (!hm) THROW(NULL, "hashmap_values: hm evaluates to false");
+    if (!hm->size) THROW(NULL, "hashmap_values: hashmap is uninitialized");
+    if (!hm->capacity) THROW(NULL, "hashmap_values: capacity can't be 0");
+    if (!hm->items) THROW(NULL, "hashmap_values: items evaluates to false");
+
+    void **values = malloc(hm->size * sizeof(void *));
+    if (!values) THROW(NULL, "hashmap_values: malloc error");
+
+    size_t i = 0;
+    for (size_t j = 0; j < hm->capacity; j++) {
+        if (!hm->items[j]) continue;
+        values[i++] = hm->items[j]->value;
+    }
+
+    return values;
+}
+
+KV **hashmap_items(HashMap *hm) {
+    if (!hm) THROW(NULL, "hashmap_items: hm evaluates to false");
+    if (!hm->size) THROW(NULL, "hashmap_items: hashmap is uninitialized");
+    if (!hm->capacity) THROW(NULL, "hashmap_items: capacity can't be 0");
+    if (!hm->items) THROW(NULL, "hashmap_items: items evaluates to false");
+
+    KV **items = malloc(hm->size * sizeof(KV *));
+    if (!items) THROW(NULL, "hashmap_items: malloc error");
+
+    size_t i = 0;
+    for (size_t j = 0; j < hm->capacity; j++) {
+        if (!hm->items[j]) continue;
+        items[i++] = hm->items[j];
+    }
+
+    return items;
+}
+
+bool hashmap_info(HashMap *hm) {
+    if (!hm) THROW(false, "hashmap_info: hm evaluates to false");
+
+    printf("size: %zu", hm->size);
+    printf("capacity: %zu", hm->capacity);
+
+    return true;
+}
+
+bool hashmap_info_kv(KV *kv) {
+    if (!kv) THROW(false, "hashmap_info_kv: kv evaluates to false");
+
+    printf("key: %s", kv->key);
+    printf("value: %s", kv->value);
 
     return true;
 }

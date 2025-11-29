@@ -7,6 +7,7 @@
 // File macros:
 // - VEC_IMPLEMENTATION: implementations of the Vec structure.
 // - VEC_CAPACITY_STEP: used to initialize and realloc the Vec's capacity.
+//   By default, `4`.
 //
 // Function macros:
 // - vec_get_as(v, i, type)
@@ -17,7 +18,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stddef.h>
 #include <stdarg.h>
 #include <stdbool.h>
 
@@ -194,7 +194,7 @@ bool vec_push(Vec *v, void *item) {
         v->capacity += VEC_CAPACITY_STEP;
 
         void *tmp = realloc(v->items, v->capacity * v->offset);
-        if (!tmp) THROW(false, "vec_push: realloc");
+        if (!tmp) THROW(false, "vec_push: realloc error");
 
         v->items = tmp;
     }
@@ -219,7 +219,7 @@ bool vec_extend(Vec *dst, Vec *src) {
 
     if (totalSize > dst->capacity) {
         void *tmp = realloc(dst->items, totalSize * dst->offset);
-        if (!tmp) THROW(false, "vec_extend: realloc");
+        if (!tmp) THROW(false, "vec_extend: realloc error");
 
         dst->items = tmp;
     }
@@ -237,9 +237,7 @@ bool vec_extend(Vec *dst, Vec *src) {
 
 void *vec_get(Vec *v, size_t index) {
     if (!v) THROW(false, "vec_get: v evaluates to false");
-
-    if (!v->size)
-        THROW(NULL, "vec_get: vector is uninitialized");
+    if (!v->size) THROW(NULL, "vec_get: vector is uninitialized");
 
     if (index >= v->size)
         THROW(NULL, "vec_get: index %zu out of bounds (size %zu)", index, v->size);

@@ -282,8 +282,8 @@ bool str_concat_arr_err_arr_is_null() {
     ASSERT_NULL(str_concat_arr(NULL, 3));
 }
 
-bool str_concat_arr_err_size_is_zero() {
-    TEST("str_concat_arr_err_size_is_zero");
+bool str_concat_arr_err_size_is_0() {
+    TEST("str_concat_arr_err_size_is_0");
 
     char *arr[] = {"ab", "cd", "ef"};
     size_t size = 0;
@@ -564,7 +564,7 @@ int main() {
         // str_concat_arr
         str_concat_arr_ok,
         str_concat_arr_err_arr_is_null,
-        str_concat_arr_err_size_is_zero,
+        str_concat_arr_err_size_is_0,
         str_concat_arr_err_arr_first_is_null,
         str_concat_arr_err_arr_other_is_null,
 

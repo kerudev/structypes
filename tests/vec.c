@@ -259,8 +259,8 @@ bool vec_print_err_v_is_null() {
     ASSERT_FALSE(vec_print(NULL));
 }
 
-bool vec_print_err_v_size_is_zero() {
-    TEST("vec_print_err_v_size_is_zero");
+bool vec_print_err_v_size_is_0() {
+    TEST("vec_print_err_v_size_is_0");
 
     Vec *v = vec_new(sizeof(char *));
 
@@ -328,7 +328,7 @@ int main() {
         // vec_print
         vec_print_ok,
         vec_print_err_v_is_null,
-        vec_print_err_v_size_is_zero,
+        vec_print_err_v_size_is_0,
 
         // vec_info
         vec_info_ok,

@@ -41,9 +41,9 @@ bool vec_free_ok() {
     TEST("vec_free_ok");
 
     Vec *v = vec_new(sizeof(char *));
-    if (!vec_push(v, "a")) ASSERT(false);
-    if (!vec_push(v, "b")) ASSERT(false);
-    if (!vec_push(v, "c")) ASSERT(false);
+    if (!vec_push(v, str_clone("a"))) ASSERT(false);
+    if (!vec_push(v, str_clone("b"))) ASSERT(false);
+    if (!vec_push(v, str_clone("c"))) ASSERT(false);
 
     ASSERT_TRUE(vec_free(v));
 }
@@ -52,23 +52,6 @@ bool vec_free_err_v_is_null() {
     TEST("vec_free_err_v_is_null");
 
     ASSERT_FALSE(vec_free(NULL));
-}
-
-bool vec_free_deep_ok() {
-    TEST("vec_free_deep_ok");
-
-    Vec *v = vec_new(sizeof(char *));
-    if (!vec_push(v, str_clone("a"))) ASSERT(false);
-    if (!vec_push(v, str_clone("b"))) ASSERT(false);
-    if (!vec_push(v, str_clone("c"))) ASSERT(false);
-
-    ASSERT_TRUE(vec_free_deep(v));
-}
-
-bool vec_free_deep_err_v_is_null() {
-    TEST("vec_free_deep_err_v_is_null");
-
-    ASSERT_FALSE(vec_free_deep(NULL));
 }
 
 bool vec_push_ok() {
@@ -285,10 +268,6 @@ int main() {
         // vec_free
         vec_free_ok,
         vec_free_err_v_is_null,
-
-        // vec_free_deep
-        vec_free_deep_ok,
-        vec_free_deep_err_v_is_null,
 
         // vec_push
         vec_push_ok,

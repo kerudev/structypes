@@ -17,7 +17,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <stdarg.h>
 #include <stdbool.h>
 
@@ -45,20 +44,12 @@ typedef struct Vec {
 Vec *vec_new(size_t offset);
 
 /**
- * Frees `v->items` and `v`. To free strings, use `vec_free_deep`.
- *
- * Returns `false` when:
- * - `v` evaluates to false.
- */
-bool vec_free(Vec *v);
-
-/**
  * Frees `v->items` (iterating over each element) and `v`.
  *
  * Returns `false` when:
  * - `v` evaluates to false.
  */
-bool vec_free_deep(Vec *v);
+bool vec_free(Vec *v);
 
 /**
  * Adds an `item` at the end of `v->items`.
@@ -160,19 +151,14 @@ Vec *vec_new(size_t offset) {
 bool vec_free(Vec *v) {
     if (!v) THROW(false, "vec_free: v evaluates to false");
 
-    free(v->items);
+    if (v->items) {
+        for (size_t i = 0; i < v->size; i++) free(v->items[i]);
+        free(v->items);
+    }
+
     free(v);
 
     return true;
-}
-
-bool vec_free_deep(Vec *v) {
-    if (!v) THROW(false, "vec_free_deep: v evaluates to false");
-
-    for (size_t i = 0; i < v->size; i++)
-        free(vec_get(v, i));
-
-    return vec_free(v);
 }
 
 bool vec_push(Vec *v, void *item) {
@@ -212,13 +198,11 @@ bool vec_extend(Vec *dst, Vec *src) {
         if (!tmp) THROW(false, "vec_extend: realloc error");
 
         dst->items = tmp;
+        dst->capacity = totalSize;
     }
 
-    memcpy(
-        (char *)dst->items + dst->size * dst->offset,
-        src->items,
-        src->size * dst->offset
-    );
+    for (size_t i = 0; i < src->size; i++)
+        dst->items[dst->size + i] = src->items[i];
 
     dst->size = totalSize;
 

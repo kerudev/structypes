@@ -141,8 +141,8 @@ bool vec_extend_err_different_offsets() {
     ASSERT_FALSE(vec_extend(v1, v2));
 }
 
-bool vec_get_ok() {
-    TEST("vec_get_ok");
+bool vec_get_ok_positive_index() {
+    TEST("vec_get_ok_positive_index");
 
     Vec *v = vec_new(sizeof(char *));
 
@@ -151,9 +151,25 @@ bool vec_get_ok() {
     if (!vec_push(v, "c")) ASSERT(false);
 
     ASSERT_BLOCK(
-        ASSERT_STR(*(char **)vec_get(v, 0), "a"),
-        ASSERT_STR(*(char **)vec_get(v, 1), "b"),
-        ASSERT_STR(*(char **)vec_get(v, 2), "c"),
+        ASSERT_STR(vec_get(v, 0), "a"),
+        ASSERT_STR(vec_get(v, 1), "b"),
+        ASSERT_STR(vec_get(v, 2), "c"),
+    );
+}
+
+bool vec_get_ok_negative_index() {
+    TEST("vec_get_ok_negative_index");
+
+    Vec *v = vec_new(sizeof(char *));
+
+    if (!vec_push(v, "a")) ASSERT(false);
+    if (!vec_push(v, "b")) ASSERT(false);
+    if (!vec_push(v, "c")) ASSERT(false);
+
+    ASSERT_BLOCK(
+        ASSERT_STR(vec_get(v, -3), "a"),
+        ASSERT_STR(vec_get(v, -2), "b"),
+        ASSERT_STR(vec_get(v, -1), "c"),
     );
 }
 
@@ -171,8 +187,8 @@ bool vec_get_err_v_size_is_0() {
     ASSERT_NULL(vec_get(v, 1));
 }
 
-bool vec_get_err_index_gte_v_size() {
-    TEST("vec_get_err_index_gte_v_size");
+bool vec_get_err_positive_index_oob() {
+    TEST("vec_get_err_positive_index_oob");
 
     Vec *v = vec_new(sizeof(char *));
     if (!vec_push(v, "a")) ASSERT(false);
@@ -180,36 +196,13 @@ bool vec_get_err_index_gte_v_size() {
     ASSERT_NULL(vec_get(v, 99));
 }
 
-bool vec_get_ptr_ok() {
-    TEST("vec_get_ptr_ok");
+bool vec_get_err_negative_index_oob() {
+    TEST("vec_get_err_negative_index_oob");
 
     Vec *v = vec_new(sizeof(char *));
     if (!vec_push(v, "a")) ASSERT(false);
 
-    ASSERT_STR(vec_get_ptr(v, 0), "a");
-}
-
-bool vec_get_ptr_err_v_is_null() {
-    TEST("vec_get_ptr_err_v_is_null");
-
-    ASSERT_NULL(vec_get_ptr(NULL, 0));
-}
-
-bool vec_get_ptr_err_v_size_is_0() {
-    TEST("vec_get_ptr_err_v_size_is_0");
-
-    Vec *v = vec_new(sizeof(char *));
-
-    ASSERT_NULL(vec_get_ptr(v, 0));
-}
-
-bool vec_get_ptr_err_index_gte_v_size() {
-    TEST("vec_get_ptr_err_index_gte_v_size");
-
-    Vec *v = vec_new(sizeof(char *));
-    if (!vec_push(v, "a")) ASSERT(false);
-
-    ASSERT_NULL(vec_get_ptr(v, 99));
+    ASSERT_NULL(vec_get(v, -99));
 }
 
 bool vec_get_as_ok() {
@@ -308,16 +301,12 @@ int main() {
         vec_extend_err_different_offsets,
 
         // vec_get
-        vec_get_ok,
+        vec_get_ok_positive_index,
+        vec_get_ok_negative_index,
         vec_get_err_v_is_null,
         vec_get_err_v_size_is_0,
-        vec_get_err_index_gte_v_size,
-
-        // vec_get_ptr
-        vec_get_ptr_ok,
-        vec_get_ptr_err_v_is_null,
-        vec_get_ptr_err_v_size_is_0,
-        vec_get_ptr_err_index_gte_v_size,
+        vec_get_err_positive_index_oob,
+        vec_get_err_negative_index_oob,
 
         // vec_get_as
         vec_get_as_ok,

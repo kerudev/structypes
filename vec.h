@@ -24,7 +24,7 @@
 /* Dynamic array that holds generic pointers. */
 typedef struct Vec {
     /* Array of generic pointers.*/
-    void *items;
+    void **items;
     /* Size of a Vec item.*/
     size_t offset;
     /* How many items the Vec is holding.*/
@@ -80,22 +80,13 @@ bool vec_push(Vec *v, void *item);
 bool vec_extend(Vec *dst, Vec *src);
 
 /**
- * Returns a pointer to the element at `index`.
+ * Returns a pointer to the element at `n`. Supports negative indexing.
  *
  * Returns `NULL` when:
- * - `index` is out of bounds.
+ * - `n` is out of bounds.
  * - `v->size == 0`.
  */
-void *vec_get(Vec *v, size_t index);
-
-/**
- * Returns a pointer to the element's value at `index`.
- *
- * Returns `NULL` when:
- * - `index` is out of bounds.
- * - `v->size == 0`.
- */
-void *vec_get_ptr(Vec *v, size_t index);
+void *vec_get(Vec *v, int n);
 
 /**
  * Prints each item in `v`.
@@ -141,7 +132,7 @@ static void _vec_err(char *msg, ...) {
  */
 #define vec_get_as(v, i, type) ({   \
     void *_tmp = vec_get((v), (i)); \
-    (_tmp) ? *(type *)_tmp : NULL;  \
+    (_tmp) ? (type)_tmp : NULL;  \
 })
 
 Vec *vec_new(size_t offset) {
@@ -179,7 +170,7 @@ bool vec_free_deep(Vec *v) {
     if (!v) THROW(false, "vec_free_deep: v evaluates to false");
 
     for (size_t i = 0; i < v->size; i++)
-        free(*(void **)vec_get(v, i));
+        free(vec_get(v, i));
 
     return vec_free(v);
 }
@@ -199,8 +190,7 @@ bool vec_push(Vec *v, void *item) {
         v->items = tmp;
     }
 
-    void **array = (void**)v->items;
-    array[v->size++] = item;
+    v->items[v->size++] = item;
 
     return true;
 }
@@ -235,23 +225,16 @@ bool vec_extend(Vec *dst, Vec *src) {
     return true;
 }
 
-void *vec_get(Vec *v, size_t index) {
+void *vec_get(Vec *v, int n) {
     if (!v) THROW(false, "vec_get: v evaluates to false");
     if (!v->size) THROW(NULL, "vec_get: vector is uninitialized");
 
-    if (index >= v->size)
-        THROW(NULL, "vec_get: index %zu out of bounds (size %zu)", index, v->size);
+    int len = (int)v->size;
 
-    // TODO support for negative indexing
+    if (abs(n) > len)
+        THROW(NULL, "vec_get: index %d out of bounds (size %d)", n, len);
 
-    return ((char *)v->items + index * v->offset);
-}
-
-void *vec_get_ptr(Vec *v, size_t index) {
-    void *ptr = vec_get(v, index);
-    if (!ptr) return ptr;
-
-    return *(void **)ptr;
+    return (n < 0) ? v->items[n + len] : v->items[n];
 }
 
 bool vec_print(Vec *v) {
@@ -261,7 +244,7 @@ bool vec_print(Vec *v) {
         THROW(false, "vec_print: vector is uninitialized");
 
     for (size_t i = 0; i < v->size; i++)
-        printf("%zu %s\n", i, *(char **)vec_get(v, i));
+        printf("%zu %s\n", i, (char *)vec_get(v, i));
 
     return true;
 }

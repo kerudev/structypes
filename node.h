@@ -179,13 +179,21 @@ static void _node_err(char *msg, ...) {
 #endif
 
 static int _comp(const void *a, const void *b) {
-    const void *n1 = (_sort == ASC) ? a : b;
-    const void *n2 = (_sort == ASC) ? b : a;
+    const Node *n1 = a;
+    const Node *n2 = b;
 
-    return strcmp(
-        *(const char **)((Node *)n1)->value,
-        *(const char **)((Node *)n2)->value
-    );
+    const char *s1 = *(const char **)n1->value;
+    const char *s2 = *(const char **)n2->value;
+
+    while (*s1 && *s2 && *s1 == *s2) s1++, s2++;
+
+    int diff = (unsigned char)*s1 - (unsigned char)*s2;
+
+    return (_sort == ASC) ? diff : -diff;
+}
+
+static void _print_indent(unsigned int indent, void *value) {
+    printf("%*s%s\n", indent, "", (char *)value);
 }
 
 Node *node_new(void *value) {
@@ -244,18 +252,18 @@ bool node_print(Node *node, NodePrintOpts opts) {
     if (opts.indent_step < 1)
         THROW(false, "node_print: indent_step must be greater than 0");
 
-    printf("%*s%s\n", opts.indent, "", (char *)node->value);
+    _print_indent(opts.indent, node->value);
     if (!node->size) return true;
 
-    size_t sizeofNode = sizeof(Node *);
+    size_t sizeofNode = sizeof(void *);
 
     Node **zero = malloc(sizeofNode * node->size);
-    Node **nonZero = malloc(sizeofNode * node->size);
+    if (!zero) THROW(false, "node_print: malloc error for zero");
 
-    if (!zero || !nonZero) {
+    Node **nonZero = malloc(sizeofNode * node->size);
+    if (!nonZero) {
         free(zero);
-        free(nonZero);
-        THROW(false, "node_print: malloc");
+        THROW(false, "node_print: malloc error for nonZero");
     }
 
     size_t zeroLen = 0;
@@ -275,7 +283,7 @@ bool node_print(Node *node, NodePrintOpts opts) {
     opts.indent += opts.indent_step;
 
     for (size_t i = 0; i < zeroLen; i++)
-        printf("%*s%s\n", opts.indent, "", (char *)zero[i]->value);
+        _print_indent(opts.indent, zero[i]->value);
 
     for (size_t i = 0; i < nonZeroLen; i++)
         if (!node_print(nonZero[i], opts)) {
@@ -293,7 +301,7 @@ bool node_print(Node *node, NodePrintOpts opts) {
 bool node_print_deep(Node *node) {
     if (!node) THROW(false, "node_print_deep: node evaluates to false");
 
-    printf("%*s%s\n", _indent, "", (char *)node->value);
+    _print_indent(_indent, node->value);
 
     _indent += _indent_step;
     size_t local_indent = _indent;
@@ -306,7 +314,7 @@ bool node_print_deep(Node *node) {
                 THROW(false, "node_print_deep: recursion error");
             _indent = local_indent;
         } else {
-            printf("%*s%s\n", _indent, "", (char *)child->value);
+            _print_indent(_indent, child->value);
         }
     }
 
@@ -320,7 +328,7 @@ bool node_print_shallow(Node *node) {
     printf("%s\n", (char *)node->value);
 
     for (size_t i = 0; i < node->size; i++)
-        printf("%*s%s\n", _indent_step, "", (char *)node->nodes[i]->value);
+        _print_indent(_indent_step, node->nodes[i]->value);
 
     return true;
 }
@@ -351,7 +359,6 @@ size_t node_total(Node *node) {
     return total;
 }
 
-// TODO it is assumed that value is a char* on the heap to use free
 bool node_free(Node *node) {
     if (!node)
         THROW(false, "node_free: node evaluates to false");

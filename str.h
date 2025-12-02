@@ -19,6 +19,8 @@
 #include <stdarg.h>
 #include <ctype.h>
 
+// TODO don't create copies of the string where it's not needed
+
 /**
  * `strlen` replacement.
  *
@@ -258,7 +260,7 @@ char str_char_at(char *str, int n) {
     int len = (int)str_len(str);
 
     if (abs(n) > len)
-        THROW('\0', "str_char_at: Index %d out of bounds for string of size %zu", n, len);
+        THROW('\0', "str_char_at: index %d out of bounds for string of size %d", n, len);
 
     return (n < 0) ? str[len + n] : str[n];
 }
@@ -357,8 +359,13 @@ char *__str_concat(char *s1, char *s2) {
 
     size_t len = str_len(s1);
 
-    char *buf = realloc(str_clone(s1), len + str_len(s2) + 1);
-    if (!buf) THROW(NULL, "__str_concat: realloc error");
+    char *clone = str_clone(s1);
+
+    char *buf = realloc(clone, len + str_len(s2) + 1);
+    if (!buf) {
+        free(clone);
+        THROW(NULL, "__str_concat: realloc error");
+    }
 
     char *ptr = buf + len;
 
@@ -382,6 +389,8 @@ char *str_concat_arr(char **arr, size_t size) {
             THROW(NULL, "str_concat_arr: __str_concat error on loop");
         }
 
+        free(buf);
+
         buf = tmp;
     }
 
@@ -403,6 +412,8 @@ char *str_join_arr(char *joiner, char **arr, size_t size) {
             THROW(NULL, "str_join_arr: str_concat failed to join with %s", arr[i]);
         }
 
+        free(buf);
+
         buf = tmp;
     }
 
@@ -421,7 +432,7 @@ char *str_rtrim(char *s) {
     int len = str_len(s);
     if (len == 0) return s;
 
-    char* back;
+    char *back;
     back = s + len - 1;
 
     while (back >= s && isspace(*back)) back--;
@@ -459,13 +470,8 @@ int str_diff(char *s1, char *s2) {
 bool str_info(char *s) {
     if (s == NULL) THROW(false, "str_info: s can't be NULL");
 
-    char *null_terminated = ('\0' == s[str_len(s) + 1])
-        ? "true"
-        : "false";
-
     printf("string: %s\n", s);
     printf("len: %zu\n", str_len(s));
-    printf("null-terminated: %s\n", null_terminated);
 
     return true;
 }

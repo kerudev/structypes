@@ -1,5 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -ggdb \
+CFLAGS = -std=c99 -fsanitize=address -ggdb \
+	-Wall -Wextra \
 	-Wno-return-type \
 	-Wno-discarded-qualifiers
 

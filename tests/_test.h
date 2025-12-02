@@ -111,18 +111,6 @@ bool _assert_arr_int(int a1[], size_t s1, int a2[], size_t s2) {
     return true;
 }
 
-bool _assert_arr(void *a1, size_t s1, void *a2, size_t s2, char *type) {
-    if (s1 != s2) {
-        _test_err("array sizes are different");
-        _test_err("s1 = %zu, s2 = %zu", s1, s2);
-        return false;
-    }
-
-    return (str_eq(type, "char*"))
-        ? _assert_arr_str(a1, s1, a2, s2)
-        : _assert_arr_int(a1, s1, a2, s2);
-}
-
 int _test_suite(bool (**tests)(), size_t total) {
     failed_tests = vec_new(sizeof(char *));
 
@@ -187,8 +175,14 @@ int _test_suite(bool (**tests)(), size_t total) {
     ok;                                     \
 })
 
-#define ASSERT_ARR(a1, s1, a2, s2, type, ...) ({ \
-    bool ok = _assert_arr(a1, s1, a2, s2, type, ##__VA_ARGS__); \
+#define ASSERT_STR_ARR(a1, s1, a2, s2, ...) ({ \
+    bool ok = _assert_arr_str(a1, s1, a2, s2); \
+    if (!in_assert_block) return ok;        \
+    ok;                                     \
+})
+
+#define ASSERT_ARR_INT(a1, s1, a2, s2, ...) ({ \
+    bool ok = _assert_arr_int(a1, s1, a2, s2); \
     if (!in_assert_block) return ok;        \
     ok;                                     \
 })
@@ -205,6 +199,12 @@ int _test_suite(bool (**tests)(), size_t total) {
     _test_skip();   \
     return true;    \
 }
+
+#define FREE(var) ({\
+    free(var);      \
+    if (!in_assert_block) return true; \
+    true;           \
+})
 
 #define TEST_SUITE(...) ({                      \
     bool (*tests[])(void) = { __VA_ARGS__ };    \

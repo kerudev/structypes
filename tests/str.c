@@ -94,17 +94,37 @@ bool __str_tok_ok() {
     TEST("__str_tok_ok");
 
     char *str = str_clone("ab/cd/ef");
+    char *ptr = str;
     char *sep = "/";
 
-    ASSERT_BLOCK(
-        ASSERT_STR(__str_tok(&str, sep), "ab"),
+    char *token1 = __str_tok(&str, sep);
+    bool result1 = ASSERT_MANUAL(
+        ASSERT_STR(token1, "ab"),
         ASSERT_STR(str, "cd/ef"),
+    );
 
-        ASSERT_STR(__str_tok(&str, sep), "cd"),
+    char *token2 = __str_tok(&str, sep);
+    bool result2 = ASSERT_MANUAL(
+        ASSERT_STR(token2, "cd"),
         ASSERT_STR(str, "ef"),
+    );
 
-        ASSERT_STR(__str_tok(&str, sep), "ef"),
+    char *token3 = __str_tok(&str, sep);
+    bool result3 = ASSERT_MANUAL(
+        ASSERT_STR(token3, "ef"),
         ASSERT_STR(str, ""),
+    );
+
+    ASSERT_BLOCK(
+        ASSERT_TRUE(result1),
+        ASSERT_TRUE(result2),
+        ASSERT_TRUE(result3),
+
+        FREE(token1),
+        FREE(token2),
+        FREE(token3),
+
+        FREE(ptr),
     );
 }
 
@@ -112,12 +132,17 @@ bool __str_tok_ok_no_separation() {
     TEST("__str_tok_ok_no_separation");
 
     char *str = str_clone("ab");
+    char *ptr = str;
     char *sep = "/";
 
+    char *token = __str_tok(&str, sep);
+
     ASSERT_BLOCK(
-        ASSERT_STR(__str_tok(&str, sep), "ab"),
+        ASSERT_STR(token, "ab"),
         ASSERT_STR(str, ""),
-        // FREE(str),
+
+        FREE(token),
+        FREE(ptr),
     );
 }
 
@@ -134,12 +159,20 @@ bool __str_tok_ok_str_is_null_after_call() {
     TEST("__str_tok_ok_str_is_null_after_call");
 
     char *str = str_clone("ab/cd");
+    char *ptr = str;
     char *sep = "/";
 
+    char *token1 = __str_tok(&str, sep);
+    char *token2 = __str_tok(&str, sep);
+
     ASSERT_BLOCK(
-        ASSERT_STR(__str_tok(&str, sep), "ab"),
-        ASSERT_STR(__str_tok(&str, sep), "cd"),
+        ASSERT_STR(token1, "ab"),
+        ASSERT_STR(token2, "cd"),
         ASSERT_NULL(__str_tok(&str, sep)),
+
+        FREE(token1),
+        FREE(token2),
+        FREE(ptr),
     );
 }
 
@@ -167,7 +200,7 @@ bool str_split_ok_one_item() {
             result,   total,
             expected, expected_size,
         ),
-        FREE(result),
+        FREE_ARRAY(result, total),
     );
 }
 
@@ -186,7 +219,7 @@ bool str_split_ok_many_items() {
             result,     total,
             expected,   expected_size,
         ),
-        FREE(result),
+        FREE_ARRAY(result, total),
     );
 }
 
@@ -221,7 +254,12 @@ bool str_split_err_sep_is_null() {
 bool str_split_first_ok() {
     TEST("str_split_first_ok");
 
-    ASSERT_STR(str_split_first("a/b/c/def", "/"), "a");
+    char *result = str_split_first("a/b/c/def", "/");
+
+    ASSERT_BLOCK(
+        ASSERT_STR(result, "a"),
+        FREE(result),
+    );
 }
 
 bool str_split_first_err_str_is_null() {
@@ -239,7 +277,12 @@ bool str_split_first_err_no_token() {
 bool str_split_last_ok() {
     TEST("str_split_last_ok");
 
-    ASSERT_STR(str_split_last("a/b/c/def", "/"), "def");
+    char *result = str_split_last("a/b/c/def", "/");
+
+    ASSERT_BLOCK(
+        ASSERT_STR(result, "def"),
+        FREE(result),
+    );
 }
 
 bool str_split_last_err_str_is_null() {
@@ -251,7 +294,7 @@ bool str_split_last_err_str_is_null() {
 bool str_split_last_err_no_token() {
     TEST("str_split_last_err_no_token");
 
-    ASSERT_STR(str_split_last("", "/"), "");
+    ASSERT_NULL(str_split_last("", "/"));
 }
 
 bool __str_concat_ok_heap_strings() {
@@ -265,15 +308,22 @@ bool __str_concat_ok_heap_strings() {
 
     ASSERT_BLOCK(
         ASSERT_STR(result, expected),
+
         FREE(s1),
         FREE(s2),
+        FREE(result),
     );
 }
 
 bool __str_concat_ok_stack_strings() {
     TEST("__str_concat_ok_stack_strings");
 
-    ASSERT_STR(__str_concat("abc", "def"), "abcdef");
+    char *result = __str_concat("abc", "def");
+
+    ASSERT_BLOCK(
+        ASSERT_STR(result, "abcdef"),
+        FREE(result),
+    );
 }
 
 bool __str_concat_err_s1_is_null() {
@@ -294,7 +344,12 @@ bool str_concat_arr_ok() {
     char *arr[] = {"ab", "cd", "ef"};
     size_t size = 3;
 
-    ASSERT_STR(str_concat_arr(arr, size), "abcdef");
+    char *result = str_concat_arr(arr, size);
+
+    ASSERT_BLOCK(
+        ASSERT_STR(result, "abcdef"),
+        FREE(result),
+    );
 }
 
 bool str_concat_arr_err_arr_is_null() {
@@ -351,7 +406,10 @@ bool str_join_arr_ok() {
     char *result = str_join_arr("/", arr, size);
     char *expected = "ab/cd/ef";
 
-    ASSERT_STR(result, expected);
+    ASSERT_BLOCK(
+        ASSERT_STR(result, expected),
+        FREE(result),
+    );
 }
 
 bool str_join_arr_err_joiner_is_null() {
@@ -384,7 +442,12 @@ bool str_join_arr_err_s2_is_null() {
 bool str_join_ok() {
     TEST("str_join_ok");
 
-    ASSERT_STR(str_join("/", "ab", "cd", "ef"), "ab/cd/ef");
+    char *result = str_join("/", "ab", "cd", "ef");
+
+    ASSERT_BLOCK(
+        ASSERT_STR(result, "ab/cd/ef"),
+        FREE(result),
+    );
 }
 
 bool str_join_err_joiner_is_null() {

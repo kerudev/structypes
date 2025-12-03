@@ -16,6 +16,7 @@
 static char *current_test = NULL;
 static Vec *failed_tests = NULL;
 static bool in_assert_block = false;
+static bool in_assert_manual = false;
 
 void TEST(const char *name) {
     current_test = str_clone(name);
@@ -192,7 +193,15 @@ int _test_suite(bool (**tests)(), size_t total) {
     bool results[] = { __VA_ARGS__ };       \
     bool ok = _assert_block(results, sizeof(results)/sizeof(results[0])); \
     in_assert_block = false;                \
-    return ok;                              \
+    if (!in_assert_manual) return ok;       \
+    ok;                                     \
+})
+
+#define ASSERT_MANUAL(...) ({   \
+    in_assert_manual = true;    \
+    bool _result = ASSERT_BLOCK(__VA_ARGS__); \
+    in_assert_manual = false;   \
+    _result;                    \
 })
 
 #define SKIP() {    \
@@ -204,6 +213,12 @@ int _test_suite(bool (**tests)(), size_t total) {
     free(var);      \
     if (!in_assert_block) return true; \
     true;           \
+})
+
+#define FREE_ARRAY(arr, len) ({ \
+    for (size_t i = 0; i < len; i++) free(arr[i]);  \
+    free(arr);                  \
+    true;                       \
 })
 
 #define TEST_SUITE(...) ({                      \

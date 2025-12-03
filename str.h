@@ -294,6 +294,7 @@ char **str_split(char *str, const char *sep, size_t *total) {
 
     char *tmp = str_clone(str);
     if (tmp == NULL) THROW(NULL, "str_split: error cloning str");
+    char *ptr = tmp;
 
     char **tokens = NULL;
     size_t size = sizeof(char *);
@@ -310,11 +311,10 @@ char **str_split(char *str, const char *sep, size_t *total) {
         }
 
         tokens = new_tokens;
-        tokens[(*total)++] = str_clone(token);
+        tokens[(*total)++] = token;
     }
 
-    // TODO fix memory leak on __str_tok
-    // free(tmp);
+    free(ptr);
 
     return tokens;
 }
@@ -322,6 +322,7 @@ char **str_split(char *str, const char *sep, size_t *total) {
 char *str_split_first(char *str, const char *sep) {
     char *tmp = str_clone(str);
     if (tmp == NULL) THROW(NULL, "str_split_first: error cloning str");
+    char *ptr = tmp;
 
     char *token = __str_tok(&tmp, sep);
     if (token == NULL) {
@@ -329,12 +330,9 @@ char *str_split_first(char *str, const char *sep) {
         THROW(NULL, "str_split_first: __str_tok error");
     }
 
-    char *first = str_clone(token);
+    free(ptr);
 
-    // TODO fix
-    // free(tmp);
-
-    return first;
+    return token;
 }
 
 char *str_split_last(char *str, const char *sep) {
@@ -342,13 +340,16 @@ char *str_split_last(char *str, const char *sep) {
 
     char *tmp = str_clone(str);
     if (tmp == NULL) THROW(NULL, "str_split_last: error cloning str");
+    char *ptr = tmp;
 
     char *token;
-    char *last;
-    while ((token = __str_tok(&tmp, sep))) last = str_clone(token);
+    char *last = NULL;
+    while ((token = __str_tok(&tmp, sep))) {
+        if (last) free(last);
+        last = token;
+    }
 
-    // TODO fix
-    // free(tmp);
+    free(ptr);
 
     return last;
 }
@@ -360,6 +361,7 @@ char *__str_concat(char *s1, char *s2) {
     size_t len = str_len(s1);
 
     char *clone = str_clone(s1);
+    if (!clone) THROW(NULL, "__str_concat: str_clone error");
 
     char *buf = realloc(clone, len + str_len(s2) + 1);
     if (!buf) {

@@ -1,12 +1,10 @@
 #include "_test.h"
 #include "../str.h"
 
-// TODO free memory on tests
-
 bool str_len_ok() {
     TEST("str_len_ok");
 
-    ASSERT(str_len("abcde") == 5);
+    ASSERT_TRUE(str_len("abcde") == 5);
 }
 
 bool str_len_err_s_is_empty() {
@@ -69,25 +67,25 @@ bool str_clone_err_s_is_null_terminator() {
 bool str_char_at_ok_positive_index() {
     TEST("str_char_at_ok_positive_index");
 
-    ASSERT(str_char_at("abcde", 2) == 'c');
+    ASSERT_TRUE(str_char_at("abcde", 2) == 'c');
 }
 
 bool str_char_at_ok_negative_index() {
     TEST("str_char_at_ok_negative_index");
 
-    ASSERT(str_char_at("abcde", -2) == 'd');
+    ASSERT_TRUE(str_char_at("abcde", -2) == 'd');
 }
 
 bool str_char_at_err_positive_index_oob() {
     TEST("str_char_at_err_positive_index_oob");
 
-    ASSERT(str_char_at("abcde", 99) == '\0');
+    ASSERT_TRUE(str_char_at("abcde", 99) == '\0');
 }
 
 bool str_char_at_err_negative_index_oob() {
     TEST("str_char_at_err_negative_index_oob");
 
-    ASSERT(str_char_at("abcde", -99) == '\0');
+    ASSERT_TRUE(str_char_at("abcde", -99) == '\0');
 }
 
 bool __str_tok_ok() {
@@ -562,10 +560,10 @@ bool str_diff_ok_same_len() {
     TEST("str_diff_ok_same_len");
 
     ASSERT_BLOCK(
-        ASSERT(str_diff("", "") ==  0),
-        ASSERT(str_diff("abc", "abc") ==  0),
-        ASSERT(str_diff("abc", "def") == -3),
-        ASSERT(str_diff("def", "abc") ==  3),
+        ASSERT_TRUE(str_diff("", "") ==  0),
+        ASSERT_TRUE(str_diff("abc", "abc") ==  0),
+        ASSERT_TRUE(str_diff("abc", "def") == -3),
+        ASSERT_TRUE(str_diff("def", "abc") ==  3),
     );
 }
 
@@ -573,8 +571,8 @@ bool str_diff_ok_s1_longer() {
     TEST("str_diff_ok_s1_longer");
 
     ASSERT_BLOCK(
-        ASSERT(str_diff("abcd", "ef") == -4),
-        ASSERT(str_diff("cdef", "ab") ==  2),
+        ASSERT_TRUE(str_diff("abcd", "ef") == -4),
+        ASSERT_TRUE(str_diff("cdef", "ab") ==  2),
     );
 }
 
@@ -582,21 +580,21 @@ bool str_diff_ok_s2_longer() {
     TEST("str_diff_ok_s2_longer");
 
     ASSERT_BLOCK(
-        ASSERT(str_diff("ab", "cdef") == -2),
-        ASSERT(str_diff("ef", "abcd") ==  4),
+        ASSERT_TRUE(str_diff("ab", "cdef") == -2),
+        ASSERT_TRUE(str_diff("ef", "abcd") ==  4),
     );
 }
 
 bool str_diff_err_s1_is_null() {
     TEST("str_diff_err_s1_is_null");
 
-    ASSERT(str_diff(NULL, "def") == -1);
+    ASSERT_TRUE(str_diff(NULL, "def") == -1);
 }
 
 bool str_diff_err_s2_is_null() {
     TEST("str_diff_err_s2_is_null");
 
-    ASSERT(str_diff("abc", NULL) == -1);
+    ASSERT_TRUE(str_diff("abc", NULL) == -1);
 }
 
 bool str_info_ok() {

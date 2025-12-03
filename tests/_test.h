@@ -134,12 +134,6 @@ int _test_suite(bool (**tests)(), size_t total) {
     return 0;
 }
 
-#define ASSERT(b, ...) ({ \
-    bool ok = _assert(b, ##__VA_ARGS__);    \
-    if (!in_assert_block) return ok;        \
-    ok;                                     \
-})
-
 #define ASSERT_ZERO(n, ...) ({ \
     bool ok = _assert(n == 0, ##__VA_ARGS__);    \
     if (!in_assert_block) return ok;        \
@@ -207,6 +201,10 @@ int _test_suite(bool (**tests)(), size_t total) {
 #define SKIP() {    \
     _test_skip();   \
     return true;    \
+}
+
+#define FAIL() {    \
+    return false;   \
 }
 
 #define FREE(var) ({\

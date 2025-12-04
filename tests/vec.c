@@ -6,28 +6,32 @@
 bool vec_new_ok_string() {
     TEST("vec_new_ok_string");
 
-    Vec *result = vec_new(sizeof(char *));
+    Vec *v = vec_new(sizeof(char *));
 
     ASSERT_BLOCK(
-        ASSERT_NOT_NULL(result),
-        ASSERT_ZERO(result->size),
-        ASSERT(result->capacity == VEC_CAPACITY_STEP),
-        ASSERT(result->offset == sizeof(char *)),
-        ASSERT_NOT_NULL(result->items),
+        ASSERT_NOT_NULL(v),
+        ASSERT_ZERO(v->size),
+        ASSERT_TRUE(v->capacity == VEC_CAPACITY_STEP),
+        ASSERT_TRUE(v->offset == sizeof(char *)),
+        ASSERT_NOT_NULL(v->items),
+
+        ASSERT_TRUE(vec_free(v)),
     );
 }
 
 bool vec_new_ok_int() {
     TEST("vec_new_ok_int");
 
-    Vec *result = vec_new(sizeof(int));
+    Vec *v = vec_new(sizeof(int));
 
     ASSERT_BLOCK(
-        ASSERT_NOT_NULL(result),
-        ASSERT_ZERO(result->size),
-        ASSERT(result->capacity == VEC_CAPACITY_STEP),
-        ASSERT(result->offset == sizeof(int)),
-        ASSERT_NOT_NULL(result->items),
+        ASSERT_NOT_NULL(v),
+        ASSERT_ZERO(v->size),
+        ASSERT_TRUE(v->capacity == VEC_CAPACITY_STEP),
+        ASSERT_TRUE(v->offset == sizeof(int)),
+        ASSERT_NOT_NULL(v->items),
+
+        ASSERT_TRUE(vec_free(v)),
     );
 }
 
@@ -41,9 +45,9 @@ bool vec_free_ok() {
     TEST("vec_free_ok");
 
     Vec *v = vec_new(sizeof(char *));
-    if (!vec_push(v, str_clone("a"))) ASSERT(false);
-    if (!vec_push(v, str_clone("b"))) ASSERT(false);
-    if (!vec_push(v, str_clone("c"))) ASSERT(false);
+    if (!vec_push(v, str_clone("a"))) FAIL();
+    if (!vec_push(v, str_clone("b"))) FAIL();
+    if (!vec_push(v, str_clone("c"))) FAIL();
 
     ASSERT_TRUE(vec_free(v));
 }
@@ -58,16 +62,18 @@ bool vec_push_ok() {
     TEST("vec_push_ok");
 
     Vec *v = vec_new(sizeof(char *));
-    if (!vec_push(v, "a")) ASSERT(false);
-    if (!vec_push(v, "b")) ASSERT(false);
-    if (!vec_push(v, "c")) ASSERT(false);
+    if (!vec_push(v, str_clone("a"))) FAIL();
+    if (!vec_push(v, str_clone("b"))) FAIL();
+    if (!vec_push(v, str_clone("c"))) FAIL();
 
     ASSERT_BLOCK(
         ASSERT_NOT_NULL(v),
-        ASSERT(v->size == 3),
-        ASSERT(v->capacity == VEC_CAPACITY_STEP),
-        ASSERT(v->offset == sizeof(char *)),
+        ASSERT_TRUE(v->size == 3),
+        ASSERT_TRUE(v->capacity == VEC_CAPACITY_STEP),
+        ASSERT_TRUE(v->offset == sizeof(char *)),
         ASSERT_NOT_NULL(v->items),
+
+        ASSERT_TRUE(vec_free(v)),
     );
 }
 
@@ -94,6 +100,10 @@ bool vec_extend_ok() {
         ASSERT_STR(vec_get_as(v1, 1, char *), "b"),
         ASSERT_STR(vec_get_as(v1, 2, char *), "c"),
         ASSERT_STR(vec_get_as(v1, 3, char *), "d"),
+
+        // TODO
+        // ASSERT_TRUE(vec_free(v1)),
+        // ASSERT_TRUE(vec_free(v2)),
     );
 }
 
@@ -103,7 +113,10 @@ bool vec_extend_err_dst_is_null() {
     Vec *v1 = NULL;
     Vec *v2 = vec_new(sizeof(char *));
 
-    ASSERT_FALSE(vec_extend(v1, v2));
+    ASSERT_BLOCK(
+        ASSERT_FALSE(vec_extend(v1, v2)),
+        ASSERT_TRUE(vec_free(v2)),
+    );
 }
 
 bool vec_extend_err_src_size_is_0() {
@@ -112,7 +125,12 @@ bool vec_extend_err_src_size_is_0() {
     Vec *v1 = vec_new(sizeof(char *));
     Vec *v2 = vec_new(sizeof(char *));
 
-    ASSERT_FALSE(vec_extend(v1, v2));
+    ASSERT_BLOCK(
+        ASSERT_FALSE(vec_extend(v1, v2)),
+
+        ASSERT_TRUE(vec_free(v1)),
+        ASSERT_TRUE(vec_free(v2)),
+    );
 }
 
 bool vec_extend_err_different_offsets() {
@@ -121,7 +139,12 @@ bool vec_extend_err_different_offsets() {
     Vec *v1 = vec_new(sizeof(char *));
     Vec *v2 = vec_new(sizeof(int));
 
-    ASSERT_FALSE(vec_extend(v1, v2));
+    ASSERT_BLOCK(
+        ASSERT_FALSE(vec_extend(v1, v2)),
+
+        ASSERT_TRUE(vec_free(v1)),
+        ASSERT_TRUE(vec_free(v2)),
+    );
 }
 
 bool vec_get_ok_positive_index() {
@@ -129,14 +152,16 @@ bool vec_get_ok_positive_index() {
 
     Vec *v = vec_new(sizeof(char *));
 
-    if (!vec_push(v, "a")) ASSERT(false);
-    if (!vec_push(v, "b")) ASSERT(false);
-    if (!vec_push(v, "c")) ASSERT(false);
+    if (!vec_push(v, str_clone("a"))) FAIL();
+    if (!vec_push(v, str_clone("b"))) FAIL();
+    if (!vec_push(v, str_clone("c"))) FAIL();
 
     ASSERT_BLOCK(
         ASSERT_STR(vec_get(v, 0), "a"),
         ASSERT_STR(vec_get(v, 1), "b"),
         ASSERT_STR(vec_get(v, 2), "c"),
+
+        ASSERT_TRUE(vec_free(v)),
     );
 }
 
@@ -145,14 +170,16 @@ bool vec_get_ok_negative_index() {
 
     Vec *v = vec_new(sizeof(char *));
 
-    if (!vec_push(v, "a")) ASSERT(false);
-    if (!vec_push(v, "b")) ASSERT(false);
-    if (!vec_push(v, "c")) ASSERT(false);
+    if (!vec_push(v, str_clone("a"))) FAIL();
+    if (!vec_push(v, str_clone("b"))) FAIL();
+    if (!vec_push(v, str_clone("c"))) FAIL();
 
     ASSERT_BLOCK(
         ASSERT_STR(vec_get(v, -3), "a"),
         ASSERT_STR(vec_get(v, -2), "b"),
         ASSERT_STR(vec_get(v, -1), "c"),
+
+        ASSERT_TRUE(vec_free(v)),
     );
 }
 
@@ -167,34 +194,46 @@ bool vec_get_err_v_size_is_0() {
 
     Vec *v = vec_new(sizeof(char *));
 
-    ASSERT_NULL(vec_get(v, 1));
+    ASSERT_BLOCK(
+        ASSERT_NULL(vec_get(v, 1)),
+        ASSERT_TRUE(vec_free(v)),
+    );
 }
 
 bool vec_get_err_positive_index_oob() {
     TEST("vec_get_err_positive_index_oob");
 
     Vec *v = vec_new(sizeof(char *));
-    if (!vec_push(v, "a")) ASSERT(false);
+    if (!vec_push(v, str_clone("a"))) FAIL();
 
-    ASSERT_NULL(vec_get(v, 99));
+    ASSERT_BLOCK(
+        ASSERT_NULL(vec_get(v, 99)),
+        ASSERT_TRUE(vec_free(v)),
+    );
 }
 
 bool vec_get_err_negative_index_oob() {
     TEST("vec_get_err_negative_index_oob");
 
     Vec *v = vec_new(sizeof(char *));
-    if (!vec_push(v, "a")) ASSERT(false);
+    if (!vec_push(v, str_clone("a"))) FAIL();
 
-    ASSERT_NULL(vec_get(v, -99));
+    ASSERT_BLOCK(
+        ASSERT_NULL(vec_get(v, -99)),
+        ASSERT_TRUE(vec_free(v)),
+    );
 }
 
 bool vec_get_as_ok() {
     TEST("vec_get_as_ok");
 
     Vec *v = vec_new(sizeof(char *));
-    if (!vec_push(v, "a")) ASSERT(false);
+    if (!vec_push(v, str_clone("a"))) FAIL();
 
-    ASSERT_STR(vec_get_as(v, 0, char *), "a");
+    ASSERT_BLOCK(
+        ASSERT_STR(vec_get_as(v, 0, char *), "a"),
+        ASSERT_TRUE(vec_free(v)),
+    );
 }
 
 bool vec_get_as_err_v_is_null() {
@@ -208,23 +247,29 @@ bool vec_get_as_err_v_size_is_0() {
 
     Vec *v = vec_new(sizeof(char *));
 
-    ASSERT_NULL(vec_get_as(v, 0, char *));
+    ASSERT_BLOCK(
+        ASSERT_NULL(vec_get_as(v, 0, char *)),
+        ASSERT_TRUE(vec_free(v)),
+    );
 }
 
 bool vec_get_as_err_index_gte_v_size() {
     TEST("vec_get_as_err_index_gte_v_size");
 
     Vec *v = vec_new(sizeof(char *));
-    if (!vec_push(v, "a")) ASSERT(false);
+    if (!vec_push(v, str_clone("a"))) FAIL();
 
-    ASSERT_NULL(vec_get_as(v, 99, char *));
+    ASSERT_BLOCK(
+        ASSERT_NULL(vec_get_as(v, 99, char *)),
+        ASSERT_TRUE(vec_free(v)),
+    );
 }
 
 bool vec_print_ok() {
     TEST("vec_print_ok");
 
     Vec *v = vec_new(sizeof(char *));
-    if (!vec_push(v, "a")) ASSERT(false);
+    if (!vec_push(v, "a")) FAIL();
 
     ASSERT_TRUE(vec_print(v));
 }
@@ -240,16 +285,22 @@ bool vec_print_err_v_size_is_0() {
 
     Vec *v = vec_new(sizeof(char *));
 
-    ASSERT_FALSE(vec_print(v));
+    ASSERT_BLOCK(
+        ASSERT_FALSE(vec_print(v)),
+        ASSERT_TRUE(vec_free(v)),
+    );
 }
 
 bool vec_info_ok() {
     TEST("vec_info_ok");
 
     Vec *v = vec_new(sizeof(char *));
-    if (!vec_push(v, "a")) ASSERT(false);
+    if (!vec_push(v, str_clone("a"))) FAIL();
 
-    ASSERT_TRUE(vec_info(v));
+    ASSERT_BLOCK(
+        ASSERT_TRUE(vec_info(v)),
+        ASSERT_TRUE(vec_free(v)),
+    );
 }
 
 bool vec_info_err_v_is_null() {

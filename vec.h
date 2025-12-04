@@ -152,7 +152,11 @@ bool vec_free(Vec *v) {
     if (!v) THROW(false, "vec_free: v evaluates to false");
 
     if (v->items) {
-        for (size_t i = 0; i < v->size; i++) free(v->items[i]);
+        if (v->size) {
+            for (size_t i = 0; i < v->size; i++)
+                if (v->items[i]) free(v->items[i]);
+        }
+
         free(v->items);
     }
 
@@ -181,7 +185,6 @@ bool vec_push(Vec *v, void *item) {
     return true;
 }
 
-// TODO refactor
 bool vec_extend(Vec *dst, Vec *src) {
     if (!dst) THROW(false, "vec_extend: dst evaluates to false");
 

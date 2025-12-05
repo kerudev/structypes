@@ -247,14 +247,16 @@ KV *hashmap_new_kv(char *k, void *v) {
 bool hashmap_free(HashMap *hm) {
     if (!hm) THROW(false, "hashmap_free: hm evaluates to false");
 
-    for (size_t i = 0; i < hm->capacity; i++) {
-        if (!hm->size) break;
-        if (!hm->items[i]) continue;
+    if (hm->capacity) {
+        for (size_t i = 0; i < hm->capacity; i++) {
+            if (!hm->size) break;
+            if (!hm->items[i]) continue;
 
-        if (!hashmap_free_kv(hm->items[i]))
-            THROW(false, "hashmap_free: error freeing kv");
+            if (!hashmap_free_kv(hm->items[i]))
+                THROW(false, "hashmap_free: error freeing kv");
 
-        hm->size--;
+            hm->size--;
+        }
     }
 
     free(hm->items);

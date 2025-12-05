@@ -111,7 +111,7 @@ bool hashmap_resize(HashMap *hm, size_t capacity);
 
 /**
  * Returns all `kv->key` in `hm->items`.
- * 
+ *
  * Returns `NULL` when:
  * - `hm` evaluates to false.
  * - `hm->size` is 0.
@@ -123,7 +123,7 @@ char **hashmap_keys(HashMap *hm);
 
 /**
  * Returns all `kv->value` in `hm->items`.
- * 
+ *
  * Returns `NULL` when:
  * - `hm` evaluates to false.
  * - `hm->size` is 0.
@@ -135,7 +135,7 @@ void **hashmap_values(HashMap *hm);
 
 /**
  * Returns all `kv` in `hm->items`.
- * 
+ *
  * Returns `NULL` when:
  * - `hm` evaluates to false.
  * - `hm->size` is 0.
@@ -147,7 +147,7 @@ KV **hashmap_items(HashMap *hm);
 
 /**
  * Prints the `size` and `capacity` from `hm`.
- * 
+ *
  * Returns `false` when:
  * - `hm` evaluates to false.
  */
@@ -155,7 +155,7 @@ bool hashmap_info(HashMap *hm);
 
 /**
  * Prints the `key` and `value` from `kv`.
- * 
+ *
  * Returns `false` when:
  * - `kv` evaluates to false.
  */
@@ -222,7 +222,11 @@ HashMap *hashmap_new(size_t capacity) {
 
     hm->size = 0;
     hm->capacity = capacity;
-    hm->items = malloc(hm->capacity * sizeof(KV *));
+    hm->items = calloc(hm->capacity, sizeof(KV *));
+    if (!hm->items) {
+        free(hm);
+        THROW(NULL, "hashmap_new: calloc error");
+    }
 
     return hm;
 }
@@ -253,9 +257,7 @@ bool hashmap_free(HashMap *hm) {
         hm->size--;
     }
 
-    // TODO fix memory leak
-    // free(hm->items);
-
+    free(hm->items);
     free(hm);
 
     return true;
@@ -392,8 +394,8 @@ KV **hashmap_items(HashMap *hm) {
 bool hashmap_info(HashMap *hm) {
     if (!hm) THROW(false, "hashmap_info: hm evaluates to false");
 
-    printf("size: %zu", hm->size);
-    printf("capacity: %zu", hm->capacity);
+    printf("size: %zu\n", hm->size);
+    printf("capacity: %zu\n", hm->capacity);
 
     return true;
 }
@@ -401,8 +403,8 @@ bool hashmap_info(HashMap *hm) {
 bool hashmap_info_kv(KV *kv) {
     if (!kv) THROW(false, "hashmap_info_kv: kv evaluates to false");
 
-    printf("key: %s", kv->key);
-    printf("value: %s", kv->value);
+    printf("key: %s\n", kv->key);
+    printf("value: %s\n", (char *)kv->value);
 
     return true;
 }

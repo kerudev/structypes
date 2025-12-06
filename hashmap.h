@@ -35,6 +35,8 @@ typedef struct {
     size_t capacity;
 } HashMap;
 
+typedef unsigned long hash_t;
+
 /**
  * Creates a new `HashMap` with `capacity`.
  *
@@ -197,8 +199,8 @@ static void _hashmap_err(char *msg, ...) {
 #define hashmap_hash(k, capacity) \
     HASHMAP_HASH_ALGORITHM((unsigned char *)k) % capacity;
 
-unsigned long djb2(unsigned char *str) {
-    unsigned long hash = 5381;
+hash_t djb2(unsigned char *str) {
+    hash_t hash = 5381;
 
     int c;
     while ((c = *str++)) hash = ((hash << 5) + hash) + c;
@@ -283,7 +285,7 @@ void *hashmap_get(HashMap *hm, char *k) {
     if (!hm->items) THROW(NULL, "hashmap_get: items evaluates to false");
     if (k == NULL) THROW(NULL, "hashmap_get: k can't be null");
 
-    unsigned long hash = hashmap_hash(k, hm->capacity);
+    hash_t hash = hashmap_hash(k, hm->capacity);
 
     return hm->items[hash]->value;
 }
@@ -298,9 +300,8 @@ bool hashmap_set(HashMap *hm, char *k, void *v) {
         if (!hashmap_resize(hm, hm->capacity + HASHMAP_CAPACITY_STEP))
             THROW(false, "hashmap_set: resize error");
 
-    unsigned long hash = hashmap_hash(k, hm->capacity);
+    hash_t hash = hashmap_hash(k, hm->capacity);
     hm->items[hash] = hashmap_new_kv(k, v);
-
     hm->size++;
 
     return true;
@@ -323,16 +324,15 @@ bool hashmap_resize(HashMap *hm, size_t capacity) {
         for (size_t i = 0; i < hm->capacity; i++) {
             if (!hm->items[i]) continue;
 
-            if (!hashmap_set(tmp, hm->items[i]->key, hm->items[i]->value))
-                THROW(false, "hashmap_resize: rehash fail");
+            hash_t hash = hashmap_hash(hm->items[i]->key, tmp->capacity);
+            tmp->items[hash] = hm->items[i];
+            tmp->size++;
         }
     }
 
     free(hm->items);
 
-    hm->items = tmp->items;
-    hm->capacity = tmp->capacity;
-    hm->size = tmp->size;
+    *hm = *tmp;
 
     free(tmp);
 

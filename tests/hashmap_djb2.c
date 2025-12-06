@@ -256,9 +256,7 @@ bool hashmap_set_err_hm_items_is_null() {
 
     ASSERT_BLOCK(
         ASSERT_FALSE(hashmap_set(hm, "red", "cherry")),
-
-        FREE(hm->items),
-        FREE(hm),
+        ASSERT_TRUE(hashmap_free(hm)),
     );
 }
 

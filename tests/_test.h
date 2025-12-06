@@ -2,13 +2,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 
-
-#ifndef STRUCTYPES_DEBUG_OFF
-  #define STRUCTYPES_DEBUG
-#else
-  #undef STRUCTYPES_DEBUG
-#endif
-
+#define STRUCTYPES_DEBUG
 #define STRUCTYPES_IMPLEMENTATION
 #include "../str.h"
 #include "../vec.h"
@@ -23,15 +17,12 @@ void TEST(const char *name) {
 }
 
 void _test_ok() {
-    #ifndef STRUCTYPES_DEBUG_OFF
     printf("[OK ] %s\n", current_test);
-    #endif
 
     free(current_test);
 }
 
 void _test_err(const char *msg, ...) {
-    #ifndef STRUCTYPES_DEBUG_OFF
     va_list args;
     va_start(args, msg);
 
@@ -40,15 +31,12 @@ void _test_err(const char *msg, ...) {
     fprintf(stderr, "\n");
 
     va_end(args);
-    #endif
 
     vec_push(failed_tests, str_clone(current_test));
 }
 
 void _test_skip() {
-    #ifndef STRUCTYPES_DEBUG_OFF
     fprintf(stderr, "[ X ] %s: test skipped\n", current_test);
-    #endif
 }
 
 bool _assert(bool b, ...) {

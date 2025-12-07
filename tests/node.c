@@ -104,7 +104,7 @@ bool node_add_child_ok() {
         ASSERT_TRUE(child->parent == parent),
         ASSERT_NULL(child->nodes),
         ASSERT_ZERO(child->size),
-        
+
         ASSERT_TRUE(node_free(parent)),
     );
 }
@@ -158,7 +158,7 @@ bool node_print_ok_node_size_is_0() {
     TEST("node_print_ok_node_size_is_0");
 
     Node *node = node_new(str_clone("abcde"));
-    
+
     ASSERT_BLOCK(
         ASSERT_TRUE(node_print(node, nodeprintopts_default())),
         ASSERT_TRUE(node_free(node)),
@@ -280,25 +280,19 @@ bool node_free_ok() {
     ASSERT_TRUE(node_free(parent));
 }
 
-bool node_free_err_node_is_null() {
-    TEST("node_free_err_node_is_null");
-
-    ASSERT_FALSE(node_free(NULL));
-}
-
-bool node_free_err_no_nodes() {
-    TEST("node_free_err_no_nodes");
+bool node_free_ok_no_nodes() {
+    TEST("node_free_ok_no_nodes");
 
     Node *node = node_new(str_clone("abcde"));
     node->size = 1;
 
-    bool result = node_free(node);
+    ASSERT_TRUE(node_free(node));
+}
 
-    free(node->value);
-    free(node->nodes);
-    free(node);
+bool node_free_err_node_is_null() {
+    TEST("node_free_err_node_is_null");
 
-    ASSERT_FALSE(result);
+    ASSERT_FALSE(node_free(NULL));
 }
 
 bool nodeprintopts_default_ok() {
@@ -355,8 +349,8 @@ int main() {
 
         // node_free
         node_free_ok,
+        node_free_ok_no_nodes,
         node_free_err_node_is_null,
-        node_free_err_no_nodes,
 
         // NodePrintOpts
         nodeprintopts_default_ok,

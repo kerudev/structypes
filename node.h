@@ -133,7 +133,7 @@ bool node_info(Node *node);
  * index in the parent is a reference to a dead node.
  *
  * Returns `false` when:
- * - `node` or `node->nodes` evaluate to false.
+ * - `node` evaluates to false.
  * - Recursion fails on `node_free`.
  */
 bool node_free(Node *node);
@@ -363,23 +363,11 @@ bool node_free(Node *node) {
     if (!node)
         THROW(false, "node_free: node evaluates to false");
 
-    if (node->size && !node->nodes)
-        THROW(false, "node_free: node->nodes evaluates to false");
-
-    size_t size = node->size;
-
-    for (size_t i = size; i > 0; i--) {
-        if (node->nodes[i - 1]->size > 0) {
-            free(node->nodes[i - 1]->value);
-            free(node->nodes[i - 1]);
-            node->size--;
-            continue;
+    if (node->nodes) {
+        for (size_t i = 0; i < node->size; i++) {
+            if (!node_free(node->nodes[i]))
+                THROW(false, "node_free: recursion error");
         }
-
-        if (!node_free(node->nodes[i - 1]))
-            THROW(false, "node_free: recursion error");
-
-        node->size--;
     }
 
     free(node->value);

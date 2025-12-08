@@ -1,5 +1,5 @@
 #include "_test.h"
-#include "../node.h"
+#include "../includes/node.h"
 
 bool node_new_ok() {
     TEST("node_new_ok");

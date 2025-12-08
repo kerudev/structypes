@@ -1,5 +1,5 @@
 #include "_test.h"
-#include "../str.h"
+#include "../includes/str.h"
 
 bool str_len_ok() {
     TEST("str_len_ok");

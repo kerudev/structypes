@@ -1,5 +1,5 @@
 #include "_test.h"
-#include "../vec.h"
+#include "../includes/vec.h"
 
 // TODO free memory on tests
 

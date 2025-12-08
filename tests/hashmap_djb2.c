@@ -1,7 +1,7 @@
 #include "_test.h"
 
 #define HASHMAP_HASH_ALGORITHM djb2
-#include "../hashmap.h"
+#include "../includes/hashmap.h"
 
 // TODO free memory on tests
 

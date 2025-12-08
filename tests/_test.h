@@ -4,8 +4,8 @@
 
 #define STRUCTYPES_DEBUG
 #define STRUCTYPES_IMPLEMENTATION
-#include "../str.h"
-#include "../vec.h"
+#include "../includes/str.h"
+#include "../includes/vec.h"
 
 static char *current_test = NULL;
 static Vec *failed_tests = NULL;

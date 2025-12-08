@@ -17,7 +17,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <ctype.h>
 
 // TODO don't create copies of the string where it's not needed
 
@@ -50,6 +49,19 @@ char *str_clone(char *s);
  * - `n > str_len(str)`.
  */
 char str_char_at(char *str, int n);
+
+/**
+ * `isspace` replacement.
+ * 
+ * Returns `true` when `c` equals to any of the following characters:
+ * - ` ` (space)
+ * - `\n`
+ * - `\t`
+ * - `\r`
+ * - `\f`
+ * - `\v`
+ */
+bool str_char_is_space(unsigned char c);
 
 /**
  * `strtok` replacement.
@@ -265,6 +277,15 @@ char str_char_at(char *str, int n) {
     return (n < 0) ? str[len + n] : str[n];
 }
 
+bool str_char_is_space(unsigned char c) {
+    return c == ' '
+    || c == '\n'
+    || c == '\t'
+    || c == '\r'
+    || c == '\f'
+    || c == '\v';
+}
+
 char *__str_tok(char **str, const char *sep) {
     char *tmp = *str;
 
@@ -424,7 +445,7 @@ char *str_join_arr(char *joiner, char **arr, size_t size) {
 
 char *str_ltrim(char *s) {
     if (s == NULL) THROW(NULL, "str_ltrim: s can't be NULL");
-    while(isspace(*s)) s++;
+    while(str_char_is_space(*s)) s++;
     return s;
 }
 
@@ -437,7 +458,7 @@ char *str_rtrim(char *s) {
     char *back;
     back = s + len - 1;
 
-    while (back >= s && isspace(*back)) back--;
+    while (back >= s && str_char_is_space(*back)) back--;
     *(back+1) = '\0';
 
     return s;

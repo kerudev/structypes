@@ -88,6 +88,23 @@ bool str_char_at_err_negative_index_oob() {
     ASSERT_TRUE(str_char_at("abcde", -99) == '\0');
 }
 
+bool str_char_is_space_ok() {
+    TEST("str_char_is_space_ok");
+
+    ASSERT_BLOCK(
+        ASSERT_TRUE(str_char_is_space(' ')),
+        ASSERT_TRUE(str_char_is_space('\n')),
+        ASSERT_TRUE(str_char_is_space('\t')),
+        ASSERT_TRUE(str_char_is_space('\r')),
+        ASSERT_TRUE(str_char_is_space('\f')),
+        ASSERT_TRUE(str_char_is_space('\v')),
+        ASSERT_FALSE(str_char_is_space('a')),
+        ASSERT_FALSE(str_char_is_space('b')),
+        ASSERT_FALSE(str_char_is_space('1')),
+        ASSERT_FALSE(str_char_is_space('2')),
+    );
+}
+
 bool __str_tok_ok() {
     TEST("__str_tok_ok");
 
@@ -628,6 +645,9 @@ int main() {
         str_char_at_ok_negative_index,
         str_char_at_err_positive_index_oob,
         str_char_at_err_negative_index_oob,
+
+        // str_char_is_space
+        str_char_is_space_ok,
 
         // __str_tok
         __str_tok_ok,

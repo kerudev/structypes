@@ -80,6 +80,15 @@ bool vec_extend(Vec *dst, Vec *src);
 void *vec_get(Vec *v, int n);
 
 /**
+ * Returns the value at the last element of `v` and assigns it to `NULL`.
+ * 
+ * Returns `NULL` when:
+ * - `v` evaluates to false.
+ * - `v->size == 0`.
+ */
+void *vec_pop(Vec *v);
+
+/**
  * Prints each item in `v`.
  *
  * Returns `false` when:
@@ -222,6 +231,18 @@ void *vec_get(Vec *v, int n) {
         THROW(NULL, "vec_get: index %d out of bounds (size %d)", n, len);
 
     return (n < 0) ? v->items[n + len] : v->items[n];
+}
+
+void *vec_pop(Vec *v) {
+    if (!v) THROW(NULL, "vec_pop: v evaluates to false");
+    if (!v->size) THROW(NULL, "vec_pop: v has no elements");
+
+    v->size--;
+
+    void *value = v->items[v->size];
+    v->items[v->size] = NULL;
+
+    return value;
 }
 
 bool vec_print(Vec *v) {

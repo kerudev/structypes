@@ -265,13 +265,47 @@ bool vec_get_as_err_index_gte_v_size() {
     );
 }
 
+bool vec_pop_ok() {
+    TEST("vec_pop_ok");
+
+    Vec *v = vec_new(sizeof(char *));
+    vec_push(v, str_clone("a"));
+    vec_push(v, str_clone("b"));
+    vec_push(v, str_clone("c"));
+
+    ASSERT_BLOCK(
+        ASSERT_STR(vec_pop(v), "c"),
+        ASSERT_TRUE(vec_free(v)),
+    );
+}
+
+bool vec_pop_err_v_is_null() {
+    TEST("vec_pop_err_v_is_null");
+
+    ASSERT_NULL(vec_pop(NULL));
+}
+
+bool vec_pop_err_v_size_is_0() {
+    TEST("vec_pop_err_v_size_is_0");
+
+    Vec *v = vec_new(sizeof(char *));
+    
+    ASSERT_BLOCK(
+        ASSERT_NULL(vec_pop(v)),
+        ASSERT_TRUE(vec_free(v)),
+    );
+}
+
 bool vec_print_ok() {
     TEST("vec_print_ok");
 
     Vec *v = vec_new(sizeof(char *));
-    if (!vec_push(v, "a")) FAIL();
+    if (!vec_push(v, str_clone("a"))) FAIL();
 
-    ASSERT_TRUE(vec_print(v));
+    ASSERT_BLOCK(
+        ASSERT_TRUE(vec_print(v)),
+        ASSERT_TRUE(vec_free(v)),
+    );
 }
 
 bool vec_print_err_v_is_null() {
@@ -343,6 +377,11 @@ int main() {
         vec_get_as_err_v_is_null,
         vec_get_as_err_v_size_is_0,
         vec_get_as_err_index_gte_v_size,
+
+        // vec_pop
+        vec_pop_ok,
+        vec_pop_err_v_is_null,
+        vec_pop_err_v_size_is_0,
 
         // vec_print
         vec_print_ok,

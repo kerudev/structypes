@@ -60,6 +60,18 @@ typedef struct {
 Node *node_new(void *value);
 
 /**
+ * Frees `node` and `node->nodes`.
+ *
+ * Keep in mind that if you free a node that has a parent, not removing that
+ * index in the parent is a reference to a dead node.
+ *
+ * Returns `false` when:
+ * - `node` evaluates to false.
+ * - Recursion fails on `node_free`.
+ */
+bool node_free(Node *node);
+
+/**
  * Creates a new `Node` with a `parent` and a `value`.
  *
  * Returns `NULL` when:
@@ -127,18 +139,6 @@ bool node_print_shallow(Node *node);
 bool node_info(Node *node);
 
 /**
- * Frees `node` and `node->nodes`.
- *
- * Keep in mind that if you free a node that has a parent, not removing that
- * index in the parent is a reference to a dead node.
- *
- * Returns `false` when:
- * - `node` evaluates to false.
- * - Recursion fails on `node_free`.
- */
-bool node_free(Node *node);
-
-/**
  * Counts the total of child nodes in `node` (doesn't count `node`).
  *
  * Returns `0` when:
@@ -161,10 +161,6 @@ NodePrintOpts nodeprintopts_default();
 #if !defined(__NODE_IMPLEMENTED) && (defined(STRUCTYPES_IMPLEMENTATION) || defined(NODE_IMPLEMENTATION))
 #define __NODE_IMPLEMENTED
 
-static int _indent = 0;
-static int _indent_step = 2;
-static NodeSortOpts _sort;
-
 #ifdef STRUCTYPES_DEBUG
 static void _node_err(char *msg, ...) {
     va_list args;
@@ -177,6 +173,10 @@ static void _node_err(char *msg, ...) {
 #else
 #define THROW(ret, msg, ...) ({ return ret; })
 #endif
+
+static int _indent = 0;
+static int _indent_step = 2;
+static NodeSortOpts _sort;
 
 static int _comp(const void *a, const void *b) {
     const Node *n1 = a;
@@ -207,6 +207,24 @@ Node *node_new(void *value) {
     node->size = 0;
 
     return node;
+}
+
+bool node_free(Node *node) {
+    if (!node)
+        THROW(false, "node_free: node evaluates to false");
+
+    if (node->nodes) {
+        for (size_t i = 0; i < node->size; i++) {
+            if (!node_free(node->nodes[i]))
+                THROW(false, "node_free: recursion error");
+        }
+    }
+
+    free(node->value);
+    free(node->nodes);
+    free(node);
+
+    return true;
 }
 
 Node *node_add(Node *parent, void *value) {
@@ -357,24 +375,6 @@ size_t node_total(Node *node) {
         total += node_total(node->nodes[i]);
 
     return total;
-}
-
-bool node_free(Node *node) {
-    if (!node)
-        THROW(false, "node_free: node evaluates to false");
-
-    if (node->nodes) {
-        for (size_t i = 0; i < node->size; i++) {
-            if (!node_free(node->nodes[i]))
-                THROW(false, "node_free: recursion error");
-        }
-    }
-
-    free(node->value);
-    free(node->nodes);
-    free(node);
-
-    return true;
 }
 
 NodePrintOpts nodeprintopts_default() {

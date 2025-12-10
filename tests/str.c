@@ -64,6 +64,28 @@ bool str_clone_err_s_is_null_terminator() {
     );
 }
 
+bool str_free_ok() {
+    TEST("str_free_ok");
+
+    char *s = str_clone("abcde");
+
+    ASSERT_BLOCK(
+        ASSERT_TRUE(str_free(&s)),
+        ASSERT_NULL(s),
+    );
+}
+
+bool str_free_ok_with_null() {
+    TEST("str_free_ok_with_null");
+
+    char *s = NULL;
+
+    ASSERT_BLOCK(
+        ASSERT_TRUE(str_free(&s)),
+        ASSERT_NULL(s),
+    );
+}
+
 bool str_char_at_ok_positive_index() {
     TEST("str_char_at_ok_positive_index");
 
@@ -639,6 +661,9 @@ int main() {
         str_clone_err_s_is_empty,
         str_clone_err_s_is_null,
         str_clone_err_s_is_null_terminator,
+
+        // str_free
+        str_free_ok,
 
         // str_char_at
         str_char_at_ok_positive_index,

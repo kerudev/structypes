@@ -42,6 +42,11 @@ size_t str_len(char *s);
 char *str_clone(char *s);
 
 /**
+ * Frees `s` and assigns it to `NULL` to avoid double-freeing.
+ */
+bool str_free(char **s);
+
+/**
  * Obtains the character at `n`. Supports negative indexing.
  * Creates a copy of `str` so it isn't mutated.
  *
@@ -266,6 +271,15 @@ char *str_clone(char *s) {
     for (size_t i = 0; i < len; i++) copy[i] = s[i];
 
     return copy;
+}
+
+bool str_free(char **s) {
+    if (s == NULL || *s == NULL) return true;
+
+    free(*s);
+    *s = NULL;
+
+    return true;
 }
 
 char str_char_at(char *str, int n) {

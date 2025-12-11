@@ -103,7 +103,7 @@ bool _assert_arr_int(int a1[], size_t s1, int a2[], size_t s2) {
 }
 
 int _test_suite(bool (**tests)(), size_t total) {
-    failed_tests = vec_new(sizeof(char *));
+    failed_tests = vec_new();
 
     printf("running tests (%zu total)\n", total);
     printf("--------------------------------\n");

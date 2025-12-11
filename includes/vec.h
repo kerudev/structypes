@@ -24,8 +24,6 @@
 typedef struct Vec {
     /* Array of generic pointers.*/
     void **items;
-    /* Size of a Vec item.*/
-    size_t offset;
     /* How many items the Vec is holding.*/
     size_t size;
     /* How many items the Vec can hold.*/
@@ -33,15 +31,14 @@ typedef struct Vec {
 } Vec;
 
 /**
- * Creates a new `Vec`. Uses `offset` to `malloc` items.
+ * Creates a new `Vec`.
  *
  * Returns `NULL` when:
- * - `capacity < 1`.
  * - `VEC_CAPACITY_STEP < 1`.
  * - `malloc` fails to allocate a new `Vec`.
  * - `malloc` fails to initialize `Vec.items`.
  */
-Vec *vec_new(size_t offset);
+Vec *vec_new();
 
 /**
  * Frees `v->items` (iterating over each element) and `v`.
@@ -65,7 +62,6 @@ bool vec_push(Vec *v, void *item);
  *
  * Returns `false` when:
  * - `size->size == 0`.
- * - `dst->offset != src->offset`.
  * - `realloc` for `dst->items` fails.
  */
 bool vec_extend(Vec *dst, Vec *src);
@@ -81,7 +77,7 @@ void *vec_get(Vec *v, int n);
 
 /**
  * Returns the value at the last element of `v` and assigns it to `NULL`.
- * 
+ *
  * Returns `NULL` when:
  * - `v` evaluates to false.
  * - `v->size == 0`.
@@ -97,7 +93,7 @@ void *vec_pop(Vec *v);
 bool vec_print(Vec *v);
 
 /**
- * Prints the values of `offset`, `size` and `capacity` of `v`.
+ * Prints the values of `size` and `capacity` of `v`.
  *
  * Returns `false` when:
  * - `v` evaluates to false.
@@ -135,10 +131,7 @@ static void _vec_err(char *msg, ...) {
     (_tmp) ? (type)_tmp : NULL;  \
 })
 
-Vec *vec_new(size_t offset) {
-    if (offset < 1)
-        THROW(NULL, "vec_new: offset must be 1 or greater");
-
+Vec *vec_new() {
     if (VEC_CAPACITY_STEP < 1)
         THROW(NULL, "vec_new: VEC_CAPACITY_STEP must be 1 or greater");
 
@@ -148,8 +141,7 @@ Vec *vec_new(size_t offset) {
 
     v->size = 0;
     v->capacity = VEC_CAPACITY_STEP;
-    v->offset = offset;
-    v->items = malloc(v->capacity * v->offset);
+    v->items = malloc(v->capacity * sizeof(void *));
 
     if (!v->items)
         THROW(NULL, "vec_new: malloc error on initialize items");
@@ -183,7 +175,7 @@ bool vec_push(Vec *v, void *item) {
 
         v->capacity += VEC_CAPACITY_STEP;
 
-        void *tmp = realloc(v->items, v->capacity * v->offset);
+        void *tmp = realloc(v->items, v->capacity * sizeof(void *));
         if (!tmp) THROW(false, "vec_push: realloc error");
 
         v->items = tmp;
@@ -200,13 +192,10 @@ bool vec_extend(Vec *dst, Vec *src) {
     if (!src->size)
         THROW(false, "vec_extend: src vector is uninitialized");
 
-    if (dst->offset != src->offset)
-        THROW(false, "vec_extend: offset doesn't match on both vectors");
-
     size_t totalSize = dst->size + src->size;
 
     if (totalSize > dst->capacity) {
-        void *tmp = realloc(dst->items, totalSize * dst->offset);
+        void *tmp = realloc(dst->items, totalSize * sizeof(void *));
         if (!tmp) THROW(false, "vec_extend: realloc error");
 
         dst->items = tmp;
@@ -260,7 +249,6 @@ bool vec_print(Vec *v) {
 bool vec_info(Vec *v) {
     if (!v) THROW(false, "vec_info: v evaluates to false");
 
-    printf("offset:   %zu\n", v->offset);
     printf("size:     %zu\n", v->size);
     printf("capacity: %zu\n", v->capacity);
 

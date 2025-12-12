@@ -148,6 +148,25 @@ void **hashmap_values(HashMap *hm);
 KV **hashmap_items(HashMap *hm);
 
 /**
+ * Compares `hm1->items` and `hm2->items`.
+ *
+ * Returns `false` when:
+ * - `hm1` or `hm2` evaluate to false.
+ * - `hashmap_eq_kv` returns `false`.
+ */
+bool hashmap_eq(HashMap *hm1, HashMap *hm2);
+
+/**
+ * Compares `kv1->key` with `kv2->key`, and `kv1->value` with `kv2->value`.
+ *
+ * Returns `false` when:
+ * - `kv1` or `kv2` evaluate to false.
+ * - `hashmap_eq_kv` returns `false`.
+ */
+// TODO assumes that kv->value is a char*
+bool hashmap_eq_kv(KV *kv1, KV *kv2);
+
+/**
  * Prints the `size` and `capacity` from `hm`.
  *
  * Returns `false` when:
@@ -391,6 +410,41 @@ KV **hashmap_items(HashMap *hm) {
     }
 
     return items;
+}
+
+bool hashmap_eq(HashMap *hm1, HashMap *hm2) {
+    if (!hm1) THROW(false, "hashmap_eq: hm1 evaluates to false");
+    if (!hm2) THROW(false, "hashmap_eq: hm2 evaluates to false");
+
+    if (hm1->size != hm2->size) THROW(false, "hashmap_eq: sizes are different");
+
+    for (size_t i = 0; i < hm1->capacity; i++) {
+        KV *kv1 = hm1->items[i];
+        KV *kv2 = hm2->items[i];
+        if (!kv1 && !kv2) continue;
+
+        if (!hashmap_eq_kv(kv1, kv2)) return false;
+    }
+
+    return true;
+}
+
+bool hashmap_eq_kv(KV *kv1, KV *kv2) {
+    if (!kv1) THROW(false, "hashmap_eq: kv1 evaluates to false");
+    if (!kv2) THROW(false, "hashmap_eq: kv2 evaluates to false");
+
+    char *k1 = kv1->key;
+    char *k2 = kv2->key;
+    while (*k1 && *k2) if (*k1++ != *k2++) return false;
+
+    char *v1 = kv1->value;
+    char *v2 = kv2->value;
+    while (*v1 && *v2) if (*v1++ != *v2++) return false;
+
+    hashmap_info_kv(kv1);
+    hashmap_info_kv(kv2);
+
+    return true;
 }
 
 bool hashmap_info(HashMap *hm) {

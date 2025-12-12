@@ -9,16 +9,17 @@
 
 static char *current_test = NULL;
 static Vec *failed_tests = NULL;
+static bool skipped = false;
 static bool in_assert_block = false;
 static bool in_assert_manual = false;
 
 void TEST(const char *name) {
     current_test = str_clone(name);
+    skipped = false;
 }
 
 void _test_ok() {
-    printf("[OK ] %s\n", current_test);
-
+    if (!skipped) printf("[OK ] %s\n", current_test);
     free(current_test);
 }
 
@@ -37,6 +38,7 @@ void _test_err(const char *msg, ...) {
 
 void _test_skip() {
     fprintf(stderr, "[ X ] %s: test skipped\n", current_test);
+    skipped = true;
 }
 
 bool _assert(bool b, ...) {
@@ -158,7 +160,7 @@ int _test_suite(bool (**tests)(), size_t total) {
     ok;                                     \
 })
 
-#define ASSERT_STR_ARR(a1, s1, a2, s2, ...) ({ \
+#define ASSERT_ARR_STR(a1, s1, a2, s2, ...) ({ \
     bool ok = _assert_arr_str(a1, s1, a2, s2); \
     if (!in_assert_block) return ok;        \
     ok;                                     \

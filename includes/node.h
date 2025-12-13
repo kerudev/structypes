@@ -60,7 +60,11 @@ typedef struct {
 Node *node_new(void *value);
 
 /**
- * Frees `node` and `node->nodes`.
+ * Frees each node inside `node->nodes` (and their values) and `node->value`,
+ * then calls `node_free_struct` to cleanup `node->nodes` and `node`.
+ *
+ * This is used to free nodes with `heap` allocated values.
+ * To free nodes with `stack` allocated values, use `node_free_stack`.
  *
  * Keep in mind that if you free a node that has a parent, not removing that
  * index in the parent is a reference to a dead node.
@@ -68,8 +72,37 @@ Node *node_new(void *value);
  * Returns `false` when:
  * - `node` evaluates to false.
  * - Recursion fails on `node_free`.
+ * - `node_free_struct` fails.
  */
 bool node_free(Node *node);
+
+/**
+ * Frees each node inside `node->nodes` (not their values), then calls
+ * `node_free_struct` to cleanup `node->nodes` and `node`.
+ *
+ * This is used to free nodes with `stack` allocated values.
+ * To free nodes with `heap` allocated values, use `node_free`.
+ *
+ * Keep in mind that if you free a node that has a parent, not removing that
+ * index in the parent is a reference to a dead node.
+ *
+ * Returns `false` when:
+ * - `node` evaluates to false.
+ * - Recursion fails on `node_free`.
+ * - `node_free_struct` fails.
+ */
+bool node_free_stack(Node *node);
+
+/**
+ * Frees `node->nodes` and `node`.
+ *
+ * To free the values of stack or heap allocated nodes, use `node_free_stack`
+ * or `node_free`, respectively.
+ *
+ * Returns `false` when:
+ * - `node` evaluates to false.
+ */
+bool node_free_struct(Node *node);
 
 /**
  * Creates a new `Node` with a `parent` and a `value`.
@@ -220,9 +253,33 @@ bool node_free(Node *node) {
         }
     }
 
-    free(node->value);
-    free(node->nodes);
+    if (node->value != NULL) free(node->value);
+
+    return node_free_struct(node);
+}
+
+bool node_free_stack(Node *node) {
+    if (!node)
+        THROW(false, "node_free_stack: node evaluates to false");
+
+    if (node->nodes) {
+        for (size_t i = 0; i < node->size; i++) {
+            if (!node_free_stack(node->nodes[i]))
+                THROW(false, "node_free_stack: recursion error");
+        }
+    }
+
+    return node_free_struct(node);
+}
+
+bool node_free_struct(Node *node) {
+    if (!node)
+        THROW(false, "node_free_struct: node evaluates to false");
+
+    if (node->nodes) free(node->nodes);
+
     free(node);
+    node = NULL;
 
     return true;
 }

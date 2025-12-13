@@ -50,15 +50,6 @@ Vec *vec_new();
 Vec *vec_from_arr(void **arr, size_t size);
 
 /**
- * Frees `v->items` (iterating over each element) and `v`.
- * Uses `free`, so use this to free data like `char*` or `void*`.
- *
- * Returns `false` when:
- * - `v` evaluates to false.
- */
-bool vec_free(Vec *v);
-
-/**
  * Frees `v->items` and `v`.
  * If you need to free each element, use `vec_free` instead.
  *
@@ -66,6 +57,15 @@ bool vec_free(Vec *v);
  * - `v` evaluates to false.
  */
 bool vec_free_struct(Vec *v);
+
+/**
+ * Frees `v->items` (iterating over each element) and `v`.
+ * Uses `free`, so use this to free data like `char*` or `void*`.
+ *
+ * Returns `false` when:
+ * - `v` evaluates to false.
+ */
+bool vec_free(Vec *v);
 
 /**
  * Adds an `item` at the end of `v->items`.
@@ -104,6 +104,26 @@ void *vec_get(Vec *v, int n);
 void *vec_pop(Vec *v);
 
 /**
+ * Sorts the elements of `v->items`.
+ *
+ * Returns `false` when:
+ * - `v` evaluates to false.
+ */
+bool vec_sort(Vec *v);
+
+/**
+ * Compares `v1->items` with `v2->items`.
+ *
+ * Both arrays must be ordered to be considered equal (see `vec_sort`).
+ *
+ * Returns `false` when:
+ * - `v1` or `v2` evaluate to false.
+ * - `v1->size` or `v2->size` are different.
+ * - The compared elements are different.
+ */
+bool vec_eq(Vec *v1, Vec *v2);
+
+/**
  * Prints each item in `v`.
  *
  * Returns `false` when:
@@ -140,6 +160,17 @@ static void _vec_err(char *msg, ...) {
 #else
 #define THROW(ret, msg, ...) ({ return ret; })
 #endif
+
+static int _comp(const void *a, const void *b) {
+    const char *s1 = *(const char **)a;
+    const char *s2 = *(const char **)b;
+
+    while (*s1 && *s2 && *s1 == *s2) s1++, s2++;
+
+    int diff = (unsigned char)*s1 - (unsigned char)*s2;
+
+    return diff;
+}
 
 /**
  * Creates a new `Vec` from an existing buffer.
@@ -182,29 +213,27 @@ Vec *vec_from_arr(void **arr, size_t size) {
     return v;
 }
 
-bool vec_free(Vec *v) {
-    if (!v) THROW(false, "vec_free: v evaluates to false");
+bool vec_free_struct(Vec *v) {
+    if (!v) THROW(false, "vec_free_struct: v evaluates to false");
 
-    if (v->items) {
-        if (v->size) {
-            for (size_t i = 0; i < v->size; i++)
-                if (v->items[i]) free(v->items[i]);
-        }
-
-        free(v->items);
-        v->items = NULL;
-    }
-
+    free(v->items);
     free(v);
     v = NULL;
 
     return true;
 }
 
-bool vec_free_struct(Vec *v) {
-    if (!v) THROW(false, "vec_free_struct: v evaluates to false");
+bool vec_free(Vec *v) {
+    if (!v) THROW(false, "vec_free: v evaluates to false");
 
-    free(v->items);
+    if (v->items) {
+        for (size_t i = 0; i < v->size; i++)
+            if (v->items[i]) free(v->items[i]);
+
+        free(v->items);
+        v->items = NULL;
+    }
+
     free(v);
     v = NULL;
 
@@ -277,6 +306,30 @@ void *vec_pop(Vec *v) {
     v->items[v->size] = NULL;
 
     return value;
+}
+
+bool vec_sort(Vec *v) {
+    if (!v) THROW(false, "vec_sort: v evaluates to false");
+
+    qsort(v->items, v->size, sizeof(void *), _comp);
+
+    return true;
+}
+
+bool vec_eq(Vec *v1, Vec *v2) {
+    if (!v1) THROW(false, "vec_eq: v1 evaluates to false");
+    if (!v2) THROW(false, "vec_eq: v2 evaluates to false");
+
+    if (v1->size != v2->size) THROW(false, "vec_eq: sizes are different");
+
+    for (size_t i = 0; i < v1->size; i++) {
+        char *s1 = v1->items[i];
+        char *s2 = v2->items[i];
+
+        while (*s1 && *s2) if (*s1++ != *s2++) return false;
+    }
+
+    return true;
 }
 
 bool vec_print(Vec *v) {

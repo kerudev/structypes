@@ -132,23 +132,6 @@ bool vec_from_arr_err_arr_is_null() {
     ASSERT_NULL(vec_from_arr(NULL, 99));
 }
 
-bool vec_free_ok() {
-    TEST("vec_free_ok");
-
-    Vec *v = vec_new();
-    if (!vec_push(v, str_clone("a"))) FAIL();
-    if (!vec_push(v, str_clone("b"))) FAIL();
-    if (!vec_push(v, str_clone("c"))) FAIL();
-
-    ASSERT_TRUE(vec_free(v));
-}
-
-bool vec_free_err_v_is_null() {
-    TEST("vec_free_err_v_is_null");
-
-    ASSERT_FALSE(vec_free(NULL));
-}
-
 bool vec_free_struct_ok() {
     TEST("vec_free_struct_ok");
 
@@ -164,6 +147,23 @@ bool vec_free_struct_err_v_is_null() {
     TEST("vec_free_struct_err_v_is_null");
 
     ASSERT_FALSE(vec_free_struct(NULL));
+}
+
+bool vec_free_ok() {
+    TEST("vec_free_ok");
+
+    Vec *v = vec_new();
+    if (!vec_push(v, str_clone("a"))) FAIL();
+    if (!vec_push(v, str_clone("b"))) FAIL();
+    if (!vec_push(v, str_clone("c"))) FAIL();
+
+    ASSERT_TRUE(vec_free(v));
+}
+
+bool vec_free_err_v_is_null() {
+    TEST("vec_free_err_v_is_null");
+
+    ASSERT_FALSE(vec_free(NULL));
 }
 
 bool vec_push_ok() {
@@ -390,6 +390,149 @@ bool vec_pop_err_v_size_is_0() {
     );
 }
 
+bool vec_sort_ok_stack_allocated() {
+    TEST("vec_sort_ok_stack_allocated");
+
+    Vec *v = vec_new();
+    vec_push(v, "b");
+    vec_push(v, "d");
+    vec_push(v, "e");
+    vec_push(v, "c");
+    vec_push(v, "a");
+
+    ASSERT_BLOCK(
+        ASSERT_TRUE(vec_sort(v)),
+
+        ASSERT_STR(vec_get(v, 0), "a"),
+        ASSERT_STR(vec_get(v, 1), "b"),
+        ASSERT_STR(vec_get(v, 2), "c"),
+        ASSERT_STR(vec_get(v, 3), "d"),
+        ASSERT_STR(vec_get(v, 4), "e"),
+
+        ASSERT_TRUE(vec_free_struct(v)),
+    );
+}
+
+bool vec_sort_ok_heap_allocated() {
+    TEST("vec_sort_ok_heap_allocated");
+
+    Vec *v = vec_new();
+    vec_push(v, str_clone("b"));
+    vec_push(v, str_clone("d"));
+    vec_push(v, str_clone("e"));
+    vec_push(v, str_clone("c"));
+    vec_push(v, str_clone("a"));
+
+    ASSERT_BLOCK(
+        ASSERT_TRUE(vec_sort(v)),
+
+        ASSERT_STR(vec_get(v, 0), "a"),
+        ASSERT_STR(vec_get(v, 1), "b"),
+        ASSERT_STR(vec_get(v, 2), "c"),
+        ASSERT_STR(vec_get(v, 3), "d"),
+        ASSERT_STR(vec_get(v, 4), "e"),
+
+        ASSERT_TRUE(vec_free(v)),
+    );
+}
+
+bool vec_sort_err_v_is_null() {
+    TEST("vec_sort_err_v_is_null");
+
+    ASSERT_FALSE(vec_sort(NULL));
+}
+
+bool vec_eq_ok_ordered_vectors() {
+    TEST("vec_eq_ok_ordered_vectors");
+
+    Vec *v1 = vec_new();
+    vec_push(v1, "a");
+    vec_push(v1, "b");
+    vec_push(v1, "c");
+
+    Vec *v2 = vec_new();
+    vec_push(v2, "a");
+    vec_push(v2, "b");
+    vec_push(v2, "c");
+
+    ASSERT_BLOCK(
+        ASSERT_TRUE(vec_eq(v1, v2)),
+
+        ASSERT_TRUE(vec_free_struct(v1)),
+        ASSERT_TRUE(vec_free_struct(v2)),
+    );
+}
+
+bool vec_eq_ok_unordered_vectors() {
+    TEST("vec_eq_ok_unordered_vectors");
+
+    Vec *v1 = vec_new();
+    vec_push(v1, "a");
+    vec_push(v1, "b");
+    vec_push(v1, "c");
+
+    Vec *v2 = vec_new();
+    vec_push(v2, "c");
+    vec_push(v2, "b");
+    vec_push(v2, "a");
+
+    ASSERT_BLOCK(
+        ASSERT_FALSE(vec_eq(v1, v2)),
+
+        ASSERT_TRUE(vec_free_struct(v1)),
+        ASSERT_TRUE(vec_free_struct(v2)),
+    );
+}
+
+bool vec_eq_err_v1_is_null() {
+    TEST("vec_eq_err_v1_is_null");
+
+    Vec *v1 = NULL;
+
+    Vec *v2 = vec_new();
+    vec_push(v2, "a");
+    vec_push(v2, "b");
+    vec_push(v2, "c");
+
+    ASSERT_BLOCK(
+        ASSERT_FALSE(vec_eq(v1, v2)),
+        ASSERT_TRUE(vec_free_struct(v2)),
+    );
+}
+
+bool vec_eq_err_v2_is_null() {
+    TEST("vec_eq_err_v2_is_null");
+
+    Vec *v1 = vec_new();
+    vec_push(v1, "a");
+    vec_push(v1, "b");
+    vec_push(v1, "c");
+
+    Vec *v2 = NULL;
+
+    ASSERT_BLOCK(
+        ASSERT_FALSE(vec_eq(v1, v2)),
+        ASSERT_TRUE(vec_free_struct(v1)),
+    );
+}
+
+bool vec_eq_err_different_sizes() {
+    TEST("vec_eq_err_different_sizes");
+
+    Vec *v1 = vec_new();
+    v1->size = 0;
+
+    Vec *v2 = vec_new();
+    v2->size = 99;
+
+    ASSERT_BLOCK(
+        ASSERT_FALSE(vec_eq(v1, v2)),
+
+        ASSERT_TRUE(vec_free_struct(v1)),
+        ASSERT_TRUE(vec_free_struct(v2)),
+    );
+}
+
 bool vec_print_ok() {
     TEST("vec_print_ok");
 
@@ -453,13 +596,13 @@ int main() {
         vec_from_arr_ok_heap_allocated,
         vec_from_arr_err_arr_is_null,
 
-        // vec_free
-        vec_free_ok,
-        vec_free_err_v_is_null,
-
         // vec_free_struct
         vec_free_struct_ok,
         vec_free_struct_err_v_is_null,
+
+        // vec_free
+        vec_free_ok,
+        vec_free_err_v_is_null,
 
         // vec_push
         vec_push_ok,
@@ -484,6 +627,18 @@ int main() {
         vec_pop_ok_heap_allocated,
         vec_pop_err_v_is_null,
         vec_pop_err_v_size_is_0,
+
+        // vec_sort
+        vec_sort_ok_stack_allocated,
+        vec_sort_ok_heap_allocated,
+        vec_sort_err_v_is_null,
+
+        // vec_eq
+        vec_eq_ok_ordered_vectors,
+        vec_eq_ok_unordered_vectors,
+        vec_eq_err_v1_is_null,
+        vec_eq_err_v2_is_null,
+        vec_eq_err_different_sizes,
 
         // vec_print
         vec_print_ok,

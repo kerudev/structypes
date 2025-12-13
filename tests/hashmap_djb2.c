@@ -7,7 +7,7 @@
 // TODO tests for hashmap_values
 // TODO tests for hashmap_items
 
-HashMap *_fixture_hashmap(size_t cap) {
+HashMap *_fixture_hashmap_heap(size_t cap) {
     HashMap *hm = hashmap_new(cap);
 
     hashmap_set(hm, str_clone("red"),    str_clone("cherry"));
@@ -16,6 +16,19 @@ HashMap *_fixture_hashmap(size_t cap) {
     hashmap_set(hm, str_clone("green"),  str_clone("apple"));
     hashmap_set(hm, str_clone("blue"),   str_clone("blueberry"));
     hashmap_set(hm, str_clone("purple"), str_clone("grape"));
+
+    return hm;
+}
+
+HashMap *_fixture_hashmap_stack(size_t cap) {
+    HashMap *hm = hashmap_new(cap);
+
+    hashmap_set(hm, "red",    "cherry");
+    hashmap_set(hm, "orange", "tangerine");
+    hashmap_set(hm, "yellow", "banana");
+    hashmap_set(hm, "green",  "apple");
+    hashmap_set(hm, "blue",   "blueberry");
+    hashmap_set(hm, "purple", "grape");
 
     return hm;
 }
@@ -72,10 +85,38 @@ bool hashmap_new_kv_err_k_is_null() {
     ASSERT_NULL(hashmap_new_kv(NULL, "cherry"));
 }
 
+bool hashmap_free_struct_ok() {
+    TEST("hashmap_free_struct_ok");
+
+    HashMap *hm = hashmap_new(HASHMAP_CAPACITY_STEP);
+
+    ASSERT_TRUE(hashmap_free_struct(hm));
+}
+
+bool hashmap_free_struct_err_hm_is_null() {
+    TEST("hashmap_free_struct_err_hm_is_null");
+
+    ASSERT_FALSE(hashmap_free_struct(NULL));
+}
+
+bool hashmap_free_kv_struct_ok() {
+    TEST("hashmap_free_kv_struct_ok");
+
+    KV *kv = hashmap_new_kv("red", "cherry");
+
+    ASSERT_TRUE(hashmap_free_kv_struct(kv));
+}
+
+bool hashmap_free_kv_struct_err_hm_is_null() {
+    TEST("hashmap_free_kv_struct_err_hm_is_null");
+
+    ASSERT_FALSE(hashmap_free_kv_struct(NULL));
+}
+
 bool hashmap_free_ok() {
     TEST("hashmap_free_ok");
 
-    HashMap *hm = _fixture_hashmap(HASHMAP_CAPACITY_STEP);
+    HashMap *hm = _fixture_hashmap_heap(HASHMAP_CAPACITY_STEP);
 
     ASSERT_TRUE(hashmap_free(hm));
 }
@@ -123,10 +164,24 @@ bool hashmap_free_kv_err_kv_is_null() {
     ASSERT_FALSE(hashmap_free_kv(NULL));
 }
 
+bool hashmap_free_stack_ok() {
+    TEST("hashmap_free_stack_ok");
+
+    HashMap *hm = _fixture_hashmap_stack(HASHMAP_CAPACITY_STEP);
+
+    ASSERT_TRUE(hashmap_free_stack(hm));
+}
+
+bool hashmap_free_stack_err_hm_is_null() {
+    TEST("hashmap_free_stack_err_hm_is_null");
+
+    ASSERT_FALSE(hashmap_free_stack(NULL));
+}
+
 bool hashmap_get_ok() {
     TEST("hashmap_get_ok");
 
-    HashMap *hm = _fixture_hashmap(HASHMAP_CAPACITY_STEP);
+    HashMap *hm = _fixture_hashmap_heap(HASHMAP_CAPACITY_STEP);
 
     ASSERT_BLOCK(
         ASSERT_STR(hashmap_get(hm, "red"),    "cherry"),
@@ -275,7 +330,7 @@ bool hashmap_set_err_k_is_null() {
 bool hashmap_resize_ok() {
     TEST("hashmap_resize_ok");
 
-    HashMap *hm = _fixture_hashmap(HASHMAP_CAPACITY_STEP);
+    HashMap *hm = _fixture_hashmap_heap(HASHMAP_CAPACITY_STEP);
 
     ASSERT_BLOCK(
         ASSERT_TRUE(hashmap_resize(hm, hm->capacity * 2)),
@@ -368,7 +423,7 @@ bool hashmap_keys_ok() {
     TEST("hashmap_keys_ok");
     SKIP();
 
-    HashMap *hm = _fixture_hashmap(HASHMAP_CAPACITY_STEP);
+    HashMap *hm = _fixture_hashmap_heap(HASHMAP_CAPACITY_STEP);
 
     char **result = hashmap_keys(hm);
     char *expected[] = {"red", "orange", "yellow", "green", "blue", "purple"};
@@ -385,24 +440,31 @@ bool hashmap_values_ok() {
     TEST("hashmap_values_ok");
     SKIP();
 
-    HashMap *hm = _fixture_hashmap(HASHMAP_CAPACITY_STEP);
+    HashMap *hm = _fixture_hashmap_heap(HASHMAP_CAPACITY_STEP);
 
-    char **result = (char **)hashmap_values(hm);
+    void **result = hashmap_values(hm);
     char *expected[] = {"cherry", "tangerine", "banana", "apple", "blueberry", "grape"};
 
+    Vec *v1 = vec_from_arr(result, hm->size);
+    Vec *v2 = vec_from(expected);
+
+    if (!vec_sort(v1)) FAIL();
+    if (!vec_sort(v2)) FAIL();
+
     ASSERT_BLOCK(
-        ASSERT_ARR_STR(
-            result,   hm->size,
-            expected, hm->size,
-        ),
+        ASSERT_TRUE(vec_eq(v1, v2)),
+
+        ASSERT_TRUE(vec_free(v1)),
+        ASSERT_TRUE(vec_free(v2)),
+        ASSERT_TRUE(hashmap_free(hm)),
     );
 }
 
 bool hashmap_items_ok() {
-    TEST("hashmap_values_ok");
+    TEST("hashmap_items_ok");
     SKIP();
 
-    HashMap *hm = _fixture_hashmap(HASHMAP_CAPACITY_STEP);
+    HashMap *hm = _fixture_hashmap_heap(HASHMAP_CAPACITY_STEP);
 
     KV **result = hashmap_items(hm);
     KV *expected[] = {
@@ -427,11 +489,12 @@ bool hashmap_items_ok() {
 bool hashmap_eq_ok() {
     TEST("hashmap_eq_ok");
 
-    HashMap *hm1 = _fixture_hashmap(HASHMAP_CAPACITY_STEP);
-    HashMap *hm2 = _fixture_hashmap(HASHMAP_CAPACITY_STEP);
+    HashMap *hm1 = _fixture_hashmap_heap(HASHMAP_CAPACITY_STEP);
+    HashMap *hm2 = _fixture_hashmap_heap(HASHMAP_CAPACITY_STEP);
 
     ASSERT_BLOCK(
         ASSERT_TRUE(hashmap_eq(hm1, hm2)),
+
         ASSERT_TRUE(hashmap_free(hm1)),
         ASSERT_TRUE(hashmap_free(hm2)),
     );
@@ -445,6 +508,7 @@ bool hashmap_eq_kv_ok() {
 
     ASSERT_BLOCK(
         ASSERT_TRUE(hashmap_eq_kv(kv1, kv2)),
+
         ASSERT_TRUE(hashmap_free_kv(kv1)),
         ASSERT_TRUE(hashmap_free_kv(kv2)),
     );
@@ -453,7 +517,7 @@ bool hashmap_eq_kv_ok() {
 bool hashmap_info_ok() {
     TEST("hashmap_info_ok");
 
-    HashMap *hm = _fixture_hashmap(HASHMAP_CAPACITY_STEP);
+    HashMap *hm = _fixture_hashmap_heap(HASHMAP_CAPACITY_STEP);
 
     ASSERT_BLOCK(
         ASSERT_TRUE(hashmap_info(hm)),
@@ -495,6 +559,14 @@ int main() {
         hashmap_new_kv_ok_v_is_null,
         hashmap_new_kv_err_k_is_null,
 
+        // hashmap_free_struct
+        hashmap_free_struct_ok,
+        hashmap_free_struct_err_hm_is_null,
+
+        // hashmap_free_kv_struct
+        hashmap_free_kv_struct_ok,
+        hashmap_free_kv_struct_err_hm_is_null,
+
         // hashmap_free
         hashmap_free_ok,
         hashmap_free_ok_value_is_null,
@@ -504,6 +576,10 @@ int main() {
         hashmap_free_kv_ok,
         hashmap_free_kv_ok_v_is_null,
         hashmap_free_kv_err_kv_is_null,
+
+        // hashmap_free_stack
+        hashmap_free_stack_ok,
+        hashmap_free_stack_err_hm_is_null,
 
         // hashmap_get
         hashmap_get_ok,
@@ -540,9 +616,11 @@ int main() {
 
         // hashmap_eq
         hashmap_eq_ok,
+        // TODO test error cases too
 
         // hashmap_eq_kv
         hashmap_eq_kv_ok,
+        // TODO test error cases too
 
         // hashmap_info
         hashmap_info_ok,

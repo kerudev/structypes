@@ -7,7 +7,7 @@
 // File macros:
 // - HASHMAP_IMPLEMENTATION: implementations of node functions.
 // - HASHMAP_CAPACITY_STEP: how much the capacity will increment on resize.
-//   By default, `1028`.
+//   By default, `1024`.
 // - HASHMAP_LOAD_FACTOR: when `hm->size / hm->capacity > HASHMAP_LOAD_FACTOR`,
 //   `hm` will be resized. By default, `0.75`.
 // - HASHMAP_HASH_ALGORITHM: reference of the hashing algorithm.
@@ -58,21 +58,52 @@ HashMap *hashmap_new(size_t capacity);
 KV *hashmap_new_kv(char *k, void *v);
 
 /**
- * Frees a `HashMap` and its `KV`.
+ * Frees `hm->items` and `hm`.
+ *
+ * To free each item inside `hm->items`, use `hashmap_free` for heap allocated
+ * items and `hashmap_free_stack` for stack allocated items.
+ *
+ * Retruns `false` when:
+ * - `hm` evaluates to false.
+ */
+bool hashmap_free_struct(HashMap *hm);
+
+/**
+ * Frees `kv`.
+ *
+ * Retruns `false` when:
+ * - `kv` evaluates to false.
+ */
+bool hashmap_free_kv_struct(KV *kv);
+
+/**
+ * Frees each element inside `hm->items`, then calls `hashmap_free_struct`.
  *
  * Returns `false` when:
  * - `hm` evaluates to false.
  * - `hashmap_free_kv` fails.
+ * - `hashmap_free_struct` fails.
  */
 bool hashmap_free(HashMap *hm);
 
 /**
- * Frees a `KV`.
+ * Frees `kv->key` and `kv->value`, then calls `hashmap_free_kv_struct`.
  *
  * Returns `false` when:
  * - `kv` evaluates to false.
+ * - `hashmap_free_kv_struct` fails.
  */
 bool hashmap_free_kv(KV *kv);
+
+/**
+ * Frees each element inside `hm->items`, then calls `hashmap_free_struct`.
+ * This assumes that every `KV` has its key and value allocated in the stack.
+ *
+ * Returns `false` when:
+ * - `hm` evaluates to false.
+ * - `hashmap_free_struct` fails.
+ */
+bool hashmap_free_stack(HashMap *hm);
 
 /**
  * Returns the value stored under `k`.
@@ -152,10 +183,13 @@ KV **hashmap_items(HashMap *hm);
  *
  * Returns `false` when:
  * - `hm1` or `hm2` evaluate to false.
+ * - `hm1->size` or `hm2->size` are different.
  * - `hashmap_eq_kv` returns `false`.
+ * - The compared elements are different.
  */
 bool hashmap_eq(HashMap *hm1, HashMap *hm2);
 
+// TODO assumes that kv->value is a char*
 /**
  * Compares `kv1->key` with `kv2->key`, and `kv1->value` with `kv2->value`.
  *
@@ -163,7 +197,6 @@ bool hashmap_eq(HashMap *hm1, HashMap *hm2);
  * - `kv1` or `kv2` evaluate to false.
  * - `hashmap_eq_kv` returns `false`.
  */
-// TODO assumes that kv->value is a char*
 bool hashmap_eq_kv(KV *kv1, KV *kv2);
 
 /**
@@ -265,6 +298,25 @@ KV *hashmap_new_kv(char *k, void *v) {
     return kv;
 }
 
+bool hashmap_free_struct(HashMap *hm) {
+    if (!hm) THROW(false, "hashmap_free_struct: hm evaluates to false");
+
+    free(hm->items);
+    free(hm);
+    hm = NULL;
+
+    return true;
+}
+
+bool hashmap_free_kv_struct(KV *kv) {
+    if (!kv) THROW(false, "hashmap_free_kv_struct: kv evaluates to false");
+
+    free(kv);
+    kv = NULL;
+
+    return true;
+}
+
 bool hashmap_free(HashMap *hm) {
     if (!hm) THROW(false, "hashmap_free: hm evaluates to false");
 
@@ -280,21 +332,33 @@ bool hashmap_free(HashMap *hm) {
         }
     }
 
-    free(hm->items);
-    free(hm);
-
-    return true;
+    return hashmap_free_struct(hm);
 }
 
 bool hashmap_free_kv(KV *kv) {
     if (!kv) THROW(false, "hashmap_free_kv: kv evaluates to false");
 
     if (kv->value) free(kv->value);
-
     free(kv->key);
-    free(kv);
 
-    return true;
+    return hashmap_free_kv_struct(kv);
+}
+
+bool hashmap_free_stack(HashMap *hm) {
+    if (!hm) THROW(false, "hashmap_free_stack: hm evaluates to false");
+
+    if (hm->capacity) {
+        for (size_t i = 0; i < hm->capacity; i++) {
+            if (!hm->size) break;
+            if (!hm->items[i]) continue;
+
+            free(hm->items[i]);
+
+            hm->size--;
+        }
+    }
+
+    return hashmap_free_struct(hm);
 }
 
 void *hashmap_get(HashMap *hm, char *k) {
@@ -440,9 +504,6 @@ bool hashmap_eq_kv(KV *kv1, KV *kv2) {
     char *v1 = kv1->value;
     char *v2 = kv2->value;
     while (*v1 && *v2) if (*v1++ != *v2++) return false;
-
-    hashmap_info_kv(kv1);
-    hashmap_info_kv(kv2);
 
     return true;
 }

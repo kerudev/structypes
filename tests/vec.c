@@ -33,8 +33,29 @@ bool vec_new_ok_int() {
     );
 }
 
-bool vec_from_ok() {
-    TEST("vec_from_ok");
+bool vec_from_ok_stack_allocated() {
+    TEST("vec_from_ok_stack_allocated");
+
+    char *arr[] = { "foo", "bar", "baz" };
+
+    Vec *v = vec_from(arr);
+
+    ASSERT_BLOCK(
+        ASSERT_NOT_NULL(v),
+        ASSERT_TRUE(v->size == 3),
+        ASSERT_TRUE(v->capacity == VEC_CAPACITY_STEP),
+        ASSERT_NOT_NULL(v->items),
+
+        ASSERT_STR(vec_get(v, 0), "foo"),
+        ASSERT_STR(vec_get(v, 1), "bar"),
+        ASSERT_STR(vec_get(v, 2), "baz"),
+
+        ASSERT_TRUE(vec_free_struct(v)),
+    );
+}
+
+bool vec_from_ok_heap_allocated() {
+    TEST("vec_from_ok_heap_allocated");
 
     char *arr[] = {
         str_clone("foo"),
@@ -64,14 +85,30 @@ bool vec_from_err_arr_is_null() {
     ASSERT_NULL(vec_from(NULL));
 }
 
-bool vec_from_arr_ok() {
-    TEST("vec_from_arr_ok");
+bool vec_from_arr_ok_stack_allocated() {
+    TEST("vec_from_arr_ok_stack_allocated");
 
-    char *arr[] = {
-        str_clone("foo"),
-        str_clone("bar"),
-        str_clone("baz"),
-    };
+    char *arr[] = { "foo", "bar", "baz" };
+
+    Vec *v = vec_from_arr((void**)arr, 3);
+
+    ASSERT_BLOCK(
+        ASSERT_NOT_NULL(v),
+        ASSERT_TRUE(v->size == 3),
+        ASSERT_TRUE(v->capacity == VEC_CAPACITY_STEP),
+        ASSERT_NOT_NULL(v->items),
+
+        ASSERT_STR(vec_get(v, 0), "foo"),
+        ASSERT_STR(vec_get(v, 1), "bar"),
+        ASSERT_STR(vec_get(v, 2), "baz"),
+
+        ASSERT_TRUE(vec_free_struct(v)),
+    );
+}
+bool vec_from_arr_ok_heap_allocated() {
+    TEST("vec_from_arr_ok_heap_allocated");
+
+    char *arr[] = { str_clone("foo"), str_clone("bar"), str_clone("baz") };
 
     Vec *v = vec_from_arr((void**)arr, 3);
 
@@ -112,6 +149,23 @@ bool vec_free_err_v_is_null() {
     ASSERT_FALSE(vec_free(NULL));
 }
 
+bool vec_free_struct_ok() {
+    TEST("vec_free_struct_ok");
+
+    Vec *v = vec_new();
+    if (!vec_push(v, "a")) FAIL();
+    if (!vec_push(v, "b")) FAIL();
+    if (!vec_push(v, "c")) FAIL();
+
+    ASSERT_TRUE(vec_free_struct(v));
+}
+
+bool vec_free_struct_err_v_is_null() {
+    TEST("vec_free_struct_err_v_is_null");
+
+    ASSERT_FALSE(vec_free_struct(NULL));
+}
+
 bool vec_push_ok() {
     TEST("vec_push_ok");
 
@@ -136,8 +190,32 @@ bool vec_push_err_v_is_null() {
     ASSERT_FALSE(vec_push(NULL, "a"));
 }
 
-bool vec_extend_ok() {
-    TEST("vec_extend_ok");
+bool vec_extend_ok_stack_allocated() {
+    TEST("vec_extend_ok_stack_allocated");
+
+    Vec *v1 = vec_new();
+    vec_push(v1, "a");
+    vec_push(v1, "b");
+
+    Vec *v2 = vec_new();
+    vec_push(v2, "c");
+    vec_push(v2, "d");
+
+    ASSERT_BLOCK(
+        ASSERT_TRUE(vec_extend(v1, v2)),
+
+        ASSERT_STR(vec_get(v1, 0), "a"),
+        ASSERT_STR(vec_get(v1, 1), "b"),
+        ASSERT_STR(vec_get(v1, 2), "c"),
+        ASSERT_STR(vec_get(v1, 3), "d"),
+
+        ASSERT_TRUE(vec_free_struct(v1)),
+        ASSERT_TRUE(vec_free_struct(v2)),
+    );
+}
+
+bool vec_extend_ok_heap_allocated() {
+    TEST("vec_extend_ok_heap_allocated");
 
     Vec *v1 = vec_new();
     vec_push(v1, str_clone("a"));
@@ -192,16 +270,16 @@ bool vec_get_ok_positive_index() {
 
     Vec *v = vec_new();
 
-    if (!vec_push(v, str_clone("a"))) FAIL();
-    if (!vec_push(v, str_clone("b"))) FAIL();
-    if (!vec_push(v, str_clone("c"))) FAIL();
+    if (!vec_push(v, "a")) FAIL();
+    if (!vec_push(v, "b")) FAIL();
+    if (!vec_push(v, "c")) FAIL();
 
     ASSERT_BLOCK(
         ASSERT_STR(vec_get(v, 0), "a"),
         ASSERT_STR(vec_get(v, 1), "b"),
         ASSERT_STR(vec_get(v, 2), "c"),
 
-        ASSERT_TRUE(vec_free(v)),
+        ASSERT_TRUE(vec_free_struct(v)),
     );
 }
 
@@ -210,16 +288,16 @@ bool vec_get_ok_negative_index() {
 
     Vec *v = vec_new();
 
-    if (!vec_push(v, str_clone("a"))) FAIL();
-    if (!vec_push(v, str_clone("b"))) FAIL();
-    if (!vec_push(v, str_clone("c"))) FAIL();
+    if (!vec_push(v, "a")) FAIL();
+    if (!vec_push(v, "b")) FAIL();
+    if (!vec_push(v, "c")) FAIL();
 
     ASSERT_BLOCK(
         ASSERT_STR(vec_get(v, -3), "a"),
         ASSERT_STR(vec_get(v, -2), "b"),
         ASSERT_STR(vec_get(v, -1), "c"),
 
-        ASSERT_TRUE(vec_free(v)),
+        ASSERT_TRUE(vec_free_struct(v)),
     );
 }
 
@@ -244,11 +322,11 @@ bool vec_get_err_positive_index_oob() {
     TEST("vec_get_err_positive_index_oob");
 
     Vec *v = vec_new();
-    if (!vec_push(v, str_clone("a"))) FAIL();
+    if (!vec_push(v, "a")) FAIL();
 
     ASSERT_BLOCK(
         ASSERT_NULL(vec_get(v, 99)),
-        ASSERT_TRUE(vec_free(v)),
+        ASSERT_TRUE(vec_free_struct(v)),
     );
 }
 
@@ -256,16 +334,30 @@ bool vec_get_err_negative_index_oob() {
     TEST("vec_get_err_negative_index_oob");
 
     Vec *v = vec_new();
-    if (!vec_push(v, str_clone("a"))) FAIL();
+    if (!vec_push(v, "a")) FAIL();
 
     ASSERT_BLOCK(
         ASSERT_NULL(vec_get(v, -99)),
-        ASSERT_TRUE(vec_free(v)),
+        ASSERT_TRUE(vec_free_struct(v)),
     );
 }
 
-bool vec_pop_ok() {
-    TEST("vec_pop_ok");
+bool vec_pop_ok_stack_allocated() {
+    TEST("vec_pop_ok_stack_allocated");
+
+    Vec *v = vec_new();
+    vec_push(v, "a");
+    vec_push(v, "b");
+    vec_push(v, "c");
+
+    ASSERT_BLOCK(
+        ASSERT_STR(vec_pop(v), "c"),
+        ASSERT_TRUE(vec_free_struct(v)),
+    );
+}
+
+bool vec_pop_ok_heap_allocated() {
+    TEST("vec_pop_ok_heap_allocated");
 
     Vec *v = vec_new();
     vec_push(v, str_clone("a"));
@@ -302,11 +394,11 @@ bool vec_print_ok() {
     TEST("vec_print_ok");
 
     Vec *v = vec_new();
-    if (!vec_push(v, str_clone("a"))) FAIL();
+    if (!vec_push(v, "a")) FAIL();
 
     ASSERT_BLOCK(
         ASSERT_TRUE(vec_print(v)),
-        ASSERT_TRUE(vec_free(v)),
+        ASSERT_TRUE(vec_free_struct(v)),
     );
 }
 
@@ -331,11 +423,11 @@ bool vec_info_ok() {
     TEST("vec_info_ok");
 
     Vec *v = vec_new();
-    if (!vec_push(v, str_clone("a"))) FAIL();
+    if (!vec_push(v, "a")) FAIL();
 
     ASSERT_BLOCK(
         ASSERT_TRUE(vec_info(v)),
-        ASSERT_TRUE(vec_free(v)),
+        ASSERT_TRUE(vec_free_struct(v)),
     );
 }
 
@@ -352,23 +444,30 @@ int main() {
         vec_new_ok_int,
 
         // vec_from
-        vec_from_ok,
+        vec_from_ok_stack_allocated,
+        vec_from_ok_heap_allocated,
         vec_from_err_arr_is_null,
 
         // vec_from_arr
-        vec_from_arr_ok,
+        vec_from_arr_ok_stack_allocated,
+        vec_from_arr_ok_heap_allocated,
         vec_from_arr_err_arr_is_null,
 
         // vec_free
         vec_free_ok,
         vec_free_err_v_is_null,
 
+        // vec_free_struct
+        vec_free_struct_ok,
+        vec_free_struct_err_v_is_null,
+
         // vec_push
         vec_push_ok,
         vec_push_err_v_is_null,
 
         // vec_extend
-        vec_extend_ok,
+        vec_extend_ok_stack_allocated,
+        vec_extend_ok_heap_allocated,
         vec_extend_err_dst_is_null,
         vec_extend_err_src_size_is_0,
 
@@ -381,7 +480,8 @@ int main() {
         vec_get_err_negative_index_oob,
 
         // vec_pop
-        vec_pop_ok,
+        vec_pop_ok_stack_allocated,
+        vec_pop_ok_heap_allocated,
         vec_pop_err_v_is_null,
         vec_pop_err_v_size_is_0,
 

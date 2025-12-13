@@ -51,11 +51,21 @@ Vec *vec_from_arr(void **arr, size_t size);
 
 /**
  * Frees `v->items` (iterating over each element) and `v`.
+ * Uses `free`, so use this to free data like `char*` or `void*`.
  *
  * Returns `false` when:
  * - `v` evaluates to false.
  */
 bool vec_free(Vec *v);
+
+/**
+ * Frees `v->items` and `v`.
+ * If you need to free each element, use `vec_free` instead.
+ *
+ * Returns `false` when:
+ * - `v` evaluates to false.
+ */
+bool vec_free_struct(Vec *v);
 
 /**
  * Adds an `item` at the end of `v->items`.
@@ -182,9 +192,21 @@ bool vec_free(Vec *v) {
         }
 
         free(v->items);
+        v->items = NULL;
     }
 
     free(v);
+    v = NULL;
+
+    return true;
+}
+
+bool vec_free_struct(Vec *v) {
+    if (!v) THROW(false, "vec_free_struct: v evaluates to false");
+
+    free(v->items);
+    free(v);
+    v = NULL;
 
     return true;
 }

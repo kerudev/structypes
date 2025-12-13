@@ -10,7 +10,7 @@
 //   By default, `4`.
 //
 // Function macros:
-// - vec_get_as(v, i, type)
+// - vec_from(arr)
 
 #ifndef VEC_H_
 #define VEC_H_
@@ -39,6 +39,15 @@ typedef struct Vec {
  * - `malloc` fails to initialize `Vec.items`.
  */
 Vec *vec_new();
+
+/**
+ * Creates a new `Vec` from an existing array and `size`.
+ *
+ * Return `NULL` when:
+ * - `arr` evaluates to false.
+ * - `vec_new` or `vec_push` fail.
+ */
+Vec *vec_from_arr(void **arr, size_t size);
 
 /**
  * Frees `v->items` (iterating over each element) and `v`.
@@ -123,13 +132,15 @@ static void _vec_err(char *msg, ...) {
 #endif
 
 /**
- * Returns the value at `i` casted to `type`.
- * If `vec_get` returns `NULL`, it won't be cast to prevent undefined behaviour.
+ * Creates a new `Vec` from an existing buffer.
+ * This is a conveniency macro that calculates the size of `arr`.
+ *
+ * Return `NULL` when:
+ * - `arr` evaluates to false.
+ * - `vec_new` or `vec_push` fail.
  */
-#define vec_get_as(v, i, type) ({   \
-    void *_tmp = vec_get((v), (i)); \
-    (_tmp) ? (type)_tmp : NULL;  \
-})
+#define vec_from(arr) \
+    vec_from_arr((void**)arr, sizeof(arr)/sizeof(arr[0]))
 
 Vec *vec_new() {
     if (VEC_CAPACITY_STEP < 1)
@@ -145,6 +156,18 @@ Vec *vec_new() {
 
     if (!v->items)
         THROW(NULL, "vec_new: malloc error on initialize items");
+
+    return v;
+}
+
+Vec *vec_from_arr(void **arr, size_t size) {
+    if (!arr) THROW(NULL, "vec_from_arr: arr evaluates to false");
+
+    Vec *v = vec_new();
+    if (!v) THROW(NULL, "vec_from_arr: vec_new failed");
+
+    for (size_t i = 0; i < size; i++)
+        if (!vec_push(v, arr[i])) THROW(NULL, "vec_push: vec_new failed");
 
     return v;
 }

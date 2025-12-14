@@ -486,22 +486,75 @@ bool hashmap_items_ok() {
     );
 }
 
-bool hashmap_eq_ok() {
-    TEST("hashmap_eq_ok");
+bool hashmap_eq_ok_same_values() {
+    TEST("hashmap_eq_ok_same_values");
 
-    HashMap *hm1 = _fixture_hashmap_heap(HASHMAP_CAPACITY_STEP);
-    HashMap *hm2 = _fixture_hashmap_heap(HASHMAP_CAPACITY_STEP);
+    HashMap *hm1 = _fixture_hashmap_stack(HASHMAP_CAPACITY_STEP);
+    HashMap *hm2 = _fixture_hashmap_stack(HASHMAP_CAPACITY_STEP);
 
     ASSERT_BLOCK(
         ASSERT_TRUE(hashmap_eq(hm1, hm2)),
 
-        ASSERT_TRUE(hashmap_free(hm1)),
-        ASSERT_TRUE(hashmap_free(hm2)),
+        ASSERT_TRUE(hashmap_free_stack(hm1)),
+        ASSERT_TRUE(hashmap_free_stack(hm2)),
     );
 }
 
-bool hashmap_eq_kv_ok() {
-    TEST("hashmap_eq_kv_ok");
+bool hashmap_eq_ok_different_values() {
+    TEST("hashmap_eq_ok_different_values");
+
+    HashMap *hm1 = hashmap_new(HASHMAP_CAPACITY_STEP);
+    hashmap_set(hm1, "red",    "cherry");
+    hashmap_set(hm1, "orange", "tangerine");
+    hashmap_set(hm1, "yellow", "banana");
+
+    HashMap *hm2 = hashmap_new(HASHMAP_CAPACITY_STEP);
+    hashmap_set(hm2, "green",  "apple");
+    hashmap_set(hm2, "blue",   "blueberry");
+    hashmap_set(hm2, "purple", "grape");
+
+    ASSERT_BLOCK(
+        ASSERT_FALSE(hashmap_eq(hm1, hm2)),
+
+        ASSERT_TRUE(hashmap_free_stack(hm1)),
+        ASSERT_TRUE(hashmap_free_stack(hm2)),
+    );
+}
+
+bool hashmap_eq_err_hm1_is_null() {
+    TEST("hashmap_eq_ok_different_values");
+
+    HashMap *hm1 = NULL;
+
+    HashMap *hm2 = hashmap_new(HASHMAP_CAPACITY_STEP);
+    hashmap_set(hm2, "green",  "apple");
+    hashmap_set(hm2, "blue",   "blueberry");
+    hashmap_set(hm2, "purple", "grape");
+
+    ASSERT_BLOCK(
+        ASSERT_FALSE(hashmap_eq(hm1, hm2)),
+        ASSERT_TRUE(hashmap_free_stack(hm2)),
+    );
+}
+
+bool hashmap_eq_err_hm2_is_null() {
+    TEST("hashmap_eq_ok_different_values");
+
+    HashMap *hm1 = hashmap_new(HASHMAP_CAPACITY_STEP);
+    hashmap_set(hm1, "red",    "cherry");
+    hashmap_set(hm1, "orange", "tangerine");
+    hashmap_set(hm1, "yellow", "banana");
+
+    HashMap *hm2 = NULL;
+
+    ASSERT_BLOCK(
+        ASSERT_FALSE(hashmap_eq(hm1, hm2)),
+        ASSERT_TRUE(hashmap_free_stack(hm1)),
+    );
+}
+
+bool hashmap_eq_kv_ok_same_values() {
+    TEST("hashmap_eq_kv_ok_same_values");
 
     KV *kv1 = hashmap_new_kv(str_clone("red"), str_clone("cherry"));
     KV *kv2 = hashmap_new_kv(str_clone("red"), str_clone("cherry"));
@@ -511,6 +564,44 @@ bool hashmap_eq_kv_ok() {
 
         ASSERT_TRUE(hashmap_free_kv(kv1)),
         ASSERT_TRUE(hashmap_free_kv(kv2)),
+    );
+}
+
+bool hashmap_eq_kv_ok_different_values() {
+    TEST("hashmap_eq_kv_ok_different_values");
+
+    KV *kv1 = hashmap_new_kv("red", "cherry");
+    KV *kv2 = hashmap_new_kv("blue", "blueberry");
+
+    ASSERT_BLOCK(
+        ASSERT_FALSE(hashmap_eq_kv(kv1, kv2)),
+
+        ASSERT_TRUE(hashmap_free_kv_struct(kv1)),
+        ASSERT_TRUE(hashmap_free_kv_struct(kv2)),
+    );
+}
+
+bool hashmap_eq_kv_err_kv1_is_null() {
+    TEST("hashmap_eq_kv_err_kv1_is_null");
+
+    KV *kv1 = NULL;
+    KV *kv2 = hashmap_new_kv("red", "cherry");
+
+    ASSERT_BLOCK(
+        ASSERT_FALSE(hashmap_eq_kv(kv1, kv2)),
+        ASSERT_TRUE(hashmap_free_kv_struct(kv2)),
+    );
+}
+
+bool hashmap_eq_kv_err_kv2_is_null() {
+    TEST("hashmap_eq_kv_err_kv2_is_null");
+
+    KV *kv1 = hashmap_new_kv("red", "cherry");
+    KV *kv2 = NULL;
+
+    ASSERT_BLOCK(
+        ASSERT_FALSE(hashmap_eq_kv(kv1, kv2)),
+        ASSERT_TRUE(hashmap_free_kv_struct(kv1)),
     );
 }
 
@@ -615,12 +706,16 @@ int main() {
         hashmap_items_ok,
 
         // hashmap_eq
-        hashmap_eq_ok,
-        // TODO test error cases too
+        hashmap_eq_ok_same_values,
+        hashmap_eq_ok_different_values,
+        hashmap_eq_err_hm1_is_null,
+        hashmap_eq_err_hm2_is_null,
 
         // hashmap_eq_kv
-        hashmap_eq_kv_ok,
-        // TODO test error cases too
+        hashmap_eq_kv_ok_same_values,
+        hashmap_eq_kv_ok_different_values,
+        hashmap_eq_kv_err_kv1_is_null,
+        hashmap_eq_kv_err_kv2_is_null,
 
         // hashmap_info
         hashmap_info_ok,

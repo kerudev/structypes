@@ -57,7 +57,7 @@ char str_char_at(char *str, int n);
 
 /**
  * `isspace` replacement.
- * 
+ *
  * Returns `true` when `c` equals to any of the following characters:
  * - ` ` (space)
  * - `\n`
@@ -487,11 +487,7 @@ bool str_eq(char *s1, char *s2) {
     if (s1 == NULL) THROW(false, "str_eq: s1 can't be NULL");
     if (s2 == NULL) THROW(false, "str_eq: s2 can't be NULL");
 
-    while (*s1 && *s2) {
-        if (*s1 != *s2) return false;
-        s1++;
-        s2++;
-    }
+    while (*s1 && *s2) if (*s1++ != *s2++) return false;
 
     return true;
 }

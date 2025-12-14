@@ -161,7 +161,7 @@ static void _vec_err(char *msg, ...) {
 #define THROW(ret, msg, ...) ({ return ret; })
 #endif
 
-static int _comp(const void *a, const void *b) {
+static int _vec_comp(const void *a, const void *b) {
     const char *s1 = *(const char **)a;
     const char *s2 = *(const char **)b;
 
@@ -311,7 +311,7 @@ void *vec_pop(Vec *v) {
 bool vec_sort(Vec *v) {
     if (!v) THROW(false, "vec_sort: v evaluates to false");
 
-    qsort(v->items, v->size, sizeof(void *), _comp);
+    qsort(v->items, v->size, sizeof(void *), _vec_comp);
 
     return true;
 }

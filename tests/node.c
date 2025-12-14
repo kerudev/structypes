@@ -325,6 +325,39 @@ bool node_total_err_node_is_null() {
     ASSERT_ZERO(node_total(NULL));
 }
 
+bool node_free_struct_ok() {
+    TEST("node_free_struct_ok");
+
+    Node *node = node_new("abcde");
+
+    ASSERT_TRUE(node_free_struct(node));
+}
+
+bool node_free_struct_ok_value_is_null() {
+    TEST("node_free_struct_ok_value_is_null");
+
+    Node *node = node_new(NULL);
+
+    ASSERT_TRUE(node_free_struct(node));
+}
+
+bool node_free_struct_ok_nodes_is_null() {
+    TEST("node_free_struct_ok_nodes_is_null");
+
+    Node *node = node_new("abcde");
+
+    free(node->nodes);
+    node->nodes = NULL;
+
+    ASSERT_TRUE(node_free_struct(node));
+}
+
+bool node_free_struct_err_node_is_null() {
+    TEST("node_free_struct_err_node_is_null");
+
+    ASSERT_FALSE(node_free_struct(NULL));
+}
+
 bool node_free_ok() {
     TEST("node_free_ok");
 
@@ -374,40 +407,6 @@ bool node_free_stack_err_node_is_null() {
 
     ASSERT_FALSE(node_free_stack(NULL));
 }
-
-bool node_free_struct_ok() {
-    TEST("node_free_struct_ok");
-
-    Node *node = node_new("abcde");
-
-    ASSERT_TRUE(node_free_struct(node));
-}
-
-bool node_free_struct_ok_value_is_null() {
-    TEST("node_free_struct_ok_value_is_null");
-
-    Node *node = node_new(NULL);
-
-    ASSERT_TRUE(node_free_struct(node));
-}
-
-bool node_free_struct_ok_nodes_is_null() {
-    TEST("node_free_struct_ok_nodes_is_null");
-
-    Node *node = node_new("abcde");
-
-    free(node->nodes);
-    node->nodes = NULL;
-
-    ASSERT_TRUE(node_free_struct(node));
-}
-
-bool node_free_struct_err_node_is_null() {
-    TEST("node_free_struct_err_node_is_null");
-
-    ASSERT_FALSE(node_free_struct(NULL));
-}
-
 
 bool nodeprintopts_default_ok() {
     TEST("nodeprintopts_default_ok");
@@ -464,6 +463,12 @@ int main() {
         node_total_ok_without_nodes,
         node_total_err_node_is_null,
 
+        // node_free_struct
+        node_free_struct_ok,
+        node_free_struct_ok_value_is_null,
+        node_free_struct_ok_nodes_is_null,
+        node_free_struct_err_node_is_null,
+
         // node_free
         node_free_ok,
         node_free_ok_no_nodes,
@@ -473,12 +478,6 @@ int main() {
         node_free_stack_ok,
         node_free_stack_ok_no_nodes,
         node_free_stack_err_node_is_null,
-
-        // node_free_struct
-        node_free_struct_ok,
-        node_free_struct_ok_value_is_null,
-        node_free_struct_ok_nodes_is_null,
-        node_free_struct_err_node_is_null,
 
         // NodePrintOpts
         nodeprintopts_default_ok,

@@ -233,7 +233,7 @@ bool str_split_ok_one_item() {
     size_t expected_size = 1;
 
     ASSERT_BLOCK(
-        ASSERT_STR_ARR(
+        ASSERT_ARR_STR(
             result,   total,
             expected, expected_size,
         ),
@@ -252,7 +252,7 @@ bool str_split_ok_many_items() {
     size_t expected_size = 4;
 
     ASSERT_BLOCK(
-        ASSERT_STR_ARR(
+        ASSERT_ARR_STR(
             result,     total,
             expected,   expected_size,
         ),

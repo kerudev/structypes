@@ -60,6 +60,17 @@ typedef struct {
 Node *node_new(void *value);
 
 /**
+ * Frees `node->nodes` and `node`.
+ *
+ * To free the values of stack or heap allocated nodes, use `node_free_stack`
+ * or `node_free`, respectively.
+ *
+ * Returns `false` when:
+ * - `node` evaluates to false.
+ */
+bool node_free_struct(Node *node);
+
+/**
  * Frees each node inside `node->nodes` (and their values) and `node->value`,
  * then calls `node_free_struct` to cleanup `node->nodes` and `node`.
  *
@@ -92,17 +103,6 @@ bool node_free(Node *node);
  * - `node_free_struct` fails.
  */
 bool node_free_stack(Node *node);
-
-/**
- * Frees `node->nodes` and `node`.
- *
- * To free the values of stack or heap allocated nodes, use `node_free_stack`
- * or `node_free`, respectively.
- *
- * Returns `false` when:
- * - `node` evaluates to false.
- */
-bool node_free_struct(Node *node);
 
 /**
  * Creates a new `Node` with a `parent` and a `value`.
@@ -211,7 +211,7 @@ static int _indent = 0;
 static int _indent_step = 2;
 static NodeSortOpts _sort;
 
-static int _comp(const void *a, const void *b) {
+static int _node_comp(const void *a, const void *b) {
     const Node *n1 = a;
     const Node *n2 = b;
 
@@ -242,6 +242,18 @@ Node *node_new(void *value) {
     return node;
 }
 
+bool node_free_struct(Node *node) {
+    if (!node)
+        THROW(false, "node_free_struct: node evaluates to false");
+
+    if (node->nodes) free(node->nodes);
+
+    free(node);
+    node = NULL;
+
+    return true;
+}
+
 bool node_free(Node *node) {
     if (!node)
         THROW(false, "node_free: node evaluates to false");
@@ -270,18 +282,6 @@ bool node_free_stack(Node *node) {
     }
 
     return node_free_struct(node);
-}
-
-bool node_free_struct(Node *node) {
-    if (!node)
-        THROW(false, "node_free_struct: node evaluates to false");
-
-    if (node->nodes) free(node->nodes);
-
-    free(node);
-    node = NULL;
-
-    return true;
 }
 
 Node *node_add(Node *parent, void *value) {
@@ -351,8 +351,8 @@ bool node_print(Node *node, NodePrintOpts opts) {
 
     if (opts.sort != NONE) {
         _sort = opts.sort;
-        qsort(zero, zeroLen, sizeofNode, _comp);
-        qsort(nonZero, nonZeroLen, sizeofNode, _comp);
+        qsort(zero, zeroLen, sizeofNode, _node_comp);
+        qsort(nonZero, nonZeroLen, sizeofNode, _node_comp);
     }
 
     opts.indent += opts.indent_step;

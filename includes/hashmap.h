@@ -200,12 +200,12 @@ bool hashmap_eq(HashMap *hm1, HashMap *hm2);
 bool hashmap_eq_kv(KV *kv1, KV *kv2);
 
 /**
- * Prints the `size` and `capacity` from `hm`.
+ * Prints each `kv` in pairs.
  *
  * Returns `false` when:
  * - `hm` evaluates to false.
  */
-bool hashmap_info(HashMap *hm);
+bool hashmap_print(HashMap *hm);
 
 /**
  * Prints the `key` and `value` from `kv`.
@@ -213,7 +213,15 @@ bool hashmap_info(HashMap *hm);
  * Returns `false` when:
  * - `kv` evaluates to false.
  */
-bool hashmap_info_kv(KV *kv);
+bool hashmap_print_kv(KV *kv);
+
+/**
+ * Prints the `size` and `capacity` from `hm`.
+ *
+ * Returns `false` when:
+ * - `hm` evaluates to false.
+ */
+bool hashmap_info(HashMap *hm);
 
 #endif // HASHMAP_H_
 
@@ -508,20 +516,37 @@ bool hashmap_eq_kv(KV *kv1, KV *kv2) {
     return true;
 }
 
+bool hashmap_print(HashMap *hm) {
+    if (!hm) THROW(false, "hashmap_print: hm evaluates to false");
+
+    printf("{\n");
+
+    for (size_t i = 0; i < hm->capacity; i++) {
+        if (!hm->items[i]) continue;
+        
+        KV *kv = hm->items[i];
+        printf("  \"%s\": \"%s\"\n", kv->key, (char *)kv->value);
+    }
+
+    printf("}\n");
+
+    return true;
+}
+
+bool hashmap_print_kv(KV *kv) {
+    if (!kv) THROW(false, "hashmap_print_kv: kv evaluates to false");
+
+    printf("key: %s\n", kv->key);
+    printf("value: %s\n", (char *)kv->value);
+
+    return true;
+}
+
 bool hashmap_info(HashMap *hm) {
     if (!hm) THROW(false, "hashmap_info: hm evaluates to false");
 
     printf("size: %zu\n", hm->size);
     printf("capacity: %zu\n", hm->capacity);
-
-    return true;
-}
-
-bool hashmap_info_kv(KV *kv) {
-    if (!kv) THROW(false, "hashmap_info_kv: kv evaluates to false");
-
-    printf("key: %s\n", kv->key);
-    printf("value: %s\n", (char *)kv->value);
 
     return true;
 }

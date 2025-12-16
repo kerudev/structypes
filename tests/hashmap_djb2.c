@@ -419,8 +419,8 @@ bool hashmap_resize_err_hm_size_gt_new_capacity() {
     );
 }
 
-bool hashmap_keys_ok() {
-    TEST("hashmap_keys_ok");
+bool hashmap_keys_ok_heap_allocated() {
+    TEST("hashmap_keys_ok_heap_allocated");
     SKIP();
 
     HashMap *hm = _fixture_hashmap_heap(HASHMAP_CAPACITY_STEP);
@@ -428,16 +428,45 @@ bool hashmap_keys_ok() {
     char **result = hashmap_keys(hm);
     char *expected[] = {"red", "orange", "yellow", "green", "blue", "purple"};
 
+    Vec *v1 = vec_from_arr((void**)result, hm->size);
+    Vec *v2 = vec_from(expected);
+
+    vec_sort(v1);
+    vec_sort(v2);
+
     ASSERT_BLOCK(
-        ASSERT_ARR_STR(
-            result,   hm->size,
-            expected, hm->size,
-        ),
+        ASSERT_TRUE(vec_eq(v1, v2)),
     );
 }
 
-bool hashmap_values_ok() {
-    TEST("hashmap_values_ok");
+bool hashmap_keys_ok_stack_allocated() {
+    TEST("hashmap_keys_ok_stack_allocated");
+
+    HashMap *hm = _fixture_hashmap_stack(HASHMAP_CAPACITY_STEP);
+
+    char **result = hashmap_keys(hm);
+    char *expected[] = {"red", "orange", "yellow", "green", "blue", "purple"};
+
+    Vec *v1 = vec_from_arr((void**)result, hm->size);
+    Vec *v2 = vec_from(expected);
+
+    vec_sort(v1);
+    vec_sort(v2);
+
+    ASSERT_BLOCK(
+        ASSERT_TRUE(vec_eq(v1, v2)),
+
+        ASSERT_TRUE(hashmap_free_stack(hm)),
+
+        ASSERT_TRUE(vec_free_struct(v1)),
+        ASSERT_TRUE(vec_free_struct(v2)),
+
+        FREE(result),
+    );
+}
+
+bool hashmap_values_ok_heap_allocated() {
+    TEST("hashmap_values_ok_heap_allocated");
     SKIP();
 
     HashMap *hm = _fixture_hashmap_heap(HASHMAP_CAPACITY_STEP);
@@ -460,29 +489,96 @@ bool hashmap_values_ok() {
     );
 }
 
-bool hashmap_items_ok() {
-    TEST("hashmap_items_ok");
+bool hashmap_values_ok_stack_allocated() {
+    TEST("hashmap_values_ok_stack_allocated");
+
+    HashMap *hm = _fixture_hashmap_stack(HASHMAP_CAPACITY_STEP);
+
+    void **result = hashmap_values(hm);
+    char *expected[] = {"cherry", "tangerine", "banana", "apple", "blueberry", "grape"};
+
+    Vec *v1 = vec_from_arr(result, hm->size);
+    Vec *v2 = vec_from(expected);
+
+    if (!vec_sort(v1)) FAIL();
+    if (!vec_sort(v2)) FAIL();
+
+    ASSERT_BLOCK(
+        ASSERT_TRUE(vec_eq(v1, v2)),
+
+        ASSERT_TRUE(hashmap_free_stack(hm)),
+
+        ASSERT_TRUE(vec_free_struct(v1)),
+        ASSERT_TRUE(vec_free_struct(v2)),
+
+        FREE(result),
+    );
+}
+
+bool hashmap_items_ok_heap_allocated() {
+    TEST("hashmap_items_ok_heap_allocated");
     SKIP();
 
     HashMap *hm = _fixture_hashmap_heap(HASHMAP_CAPACITY_STEP);
 
     KV **result = hashmap_items(hm);
     KV *expected[] = {
-        hashmap_new_kv(str_clone("red"),    str_clone("cherry")),
-        hashmap_new_kv(str_clone("orange"), str_clone("tangerine")),
-        hashmap_new_kv(str_clone("yellow"), str_clone("banana")),
-        hashmap_new_kv(str_clone("green"),  str_clone("apple")),
-        hashmap_new_kv(str_clone("blue"),   str_clone("blueberry")),
-        hashmap_new_kv(str_clone("purple"), str_clone("grape")),
+        hashmap_new_kv("red",    "cherry"),
+        hashmap_new_kv("orange", "tangerine"),
+        hashmap_new_kv("yellow", "banana"),
+        hashmap_new_kv("green",  "apple"),
+        hashmap_new_kv("blue",   "blueberry"),
+        hashmap_new_kv("purple", "grape"),
     };
 
     for (size_t i = 0; i < hm->size; i++) {
-        if (!hashmap_eq_kv(result[i], expected[i])) FAIL();
+        ASSERT_MANUAL(
+            ASSERT_TRUE(hashmap_eq_kv(result[i], expected[i])),
+
+            ASSERT_TRUE(hashmap_free_kv_struct(result[i])),
+            ASSERT_TRUE(hashmap_free_kv_struct(expected[i])),
+        );
     }
 
+    ASSERT_TRUE(hashmap_free(hm));
+}
+
+bool hashmap_items_ok_stack_allocated() {
+    TEST("hashmap_items_ok_stack_allocated");
+    SKIP();
+
+    HashMap *hm = _fixture_hashmap_stack(HASHMAP_CAPACITY_STEP);
+
+    KV **result = hashmap_items(hm);
+    KV *expected[] = {
+        hashmap_new_kv("red",    "cherry"),
+        hashmap_new_kv("orange", "tangerine"),
+        hashmap_new_kv("yellow", "banana"),
+        hashmap_new_kv("green",  "apple"),
+        hashmap_new_kv("blue",   "blueberry"),
+        hashmap_new_kv("purple", "grape"),
+    };
+
+    Vec *v1 = vec_from_arr((void**)result, hm->size);
+    Vec *v2 = vec_from(expected);
+
+    // vec_sort_with(v1, hashmap_eq_kv);
+    // vec_sort_with(v2, hashmap_eq_kv);
+
+    // for (size_t i = 0; i < hm->size; i++) {
+    //     ASSERT_MANUAL(
+    //         ASSERT_TRUE(hashmap_eq_kv(v1[i], expected[i])),
+
+    //         ASSERT_TRUE(hashmap_free_kv_struct(result[i])),
+    //         ASSERT_TRUE(hashmap_free_kv_struct(expected[i])),
+    //     );
+    // }
+
     ASSERT_BLOCK(
+        // ASSERT_TRUE(vec_eq_with(v1, v2, hashmap_eq_kv)),
+
         ASSERT_TRUE(hashmap_free(hm)),
-        ASSERT_TRUE(hashmap_free(hm)),
+        FREE(result),
     );
 }
 
@@ -605,6 +701,40 @@ bool hashmap_eq_kv_err_kv2_is_null() {
     );
 }
 
+bool hashmap_print_ok() {
+    TEST("hashmap_print_ok");
+
+    HashMap *hm = _fixture_hashmap_stack(HASHMAP_CAPACITY_STEP);
+
+    ASSERT_BLOCK(
+        ASSERT_TRUE(hashmap_print(hm)),
+        ASSERT_TRUE(hashmap_free_stack(hm)),
+    );
+}
+
+bool hashmap_print_err_hm_is_null() {
+    TEST("hashmap_print_err_hm_is_null");
+
+    ASSERT_FALSE(hashmap_print(NULL));
+}
+
+bool hashmap_print_kv_ok() {
+    TEST("hashmap_print_kv_ok");
+
+    KV *kv = hashmap_new_kv("red", "cherry");
+
+    ASSERT_BLOCK(
+        ASSERT_TRUE(hashmap_print_kv(kv)),
+        ASSERT_TRUE(hashmap_free_kv_struct(kv)),
+    );
+}
+
+bool hashmap_print_kv_err_kv_is_null() {
+    TEST("hashmap_print_kv_err_kv_is_null");
+
+    ASSERT_FALSE(hashmap_print_kv(NULL));
+}
+
 bool hashmap_info_ok() {
     TEST("hashmap_info_ok");
 
@@ -620,23 +750,6 @@ bool hashmap_info_err_hm_is_null() {
     TEST("hashmap_info_err_hm_is_null");
 
     ASSERT_FALSE(hashmap_info(NULL));
-}
-
-bool hashmap_info_kv_ok() {
-    TEST("hashmap_info_kv_ok");
-
-    KV *kv = hashmap_new_kv(str_clone("red"), str_clone("cherry"));
-
-    ASSERT_BLOCK(
-        ASSERT_TRUE(hashmap_info_kv(kv)),
-        ASSERT_TRUE(hashmap_free_kv(kv)),
-    );
-}
-
-bool hashmap_info_kv_err_kv_is_null() {
-    TEST("hashmap_info_kv_err_kv_is_null");
-
-    ASSERT_FALSE(hashmap_info_kv(NULL));
 }
 
 int main() {
@@ -697,13 +810,16 @@ int main() {
         hashmap_resize_err_hm_size_gt_new_capacity,
 
         // hashmap_keys
-        hashmap_keys_ok,
+        hashmap_keys_ok_heap_allocated,
+        hashmap_keys_ok_stack_allocated,
 
         // hashmap_values
-        hashmap_values_ok,
+        hashmap_values_ok_heap_allocated,
+        hashmap_values_ok_stack_allocated,
 
         // hashmap_items
-        hashmap_items_ok,
+        hashmap_items_ok_heap_allocated,
+        hashmap_items_ok_stack_allocated,
 
         // hashmap_eq
         hashmap_eq_ok_same_values,
@@ -717,12 +833,16 @@ int main() {
         hashmap_eq_kv_err_kv1_is_null,
         hashmap_eq_kv_err_kv2_is_null,
 
+        // hashmap_print
+        hashmap_print_ok,
+        hashmap_print_err_hm_is_null,
+
+        // hashmap_print_kv
+        hashmap_print_kv_ok,
+        hashmap_print_kv_err_kv_is_null,
+
         // hashmap_info
         hashmap_info_ok,
         hashmap_info_err_hm_is_null,
-
-        // hashmap_info_kv
-        hashmap_info_kv_ok,
-        hashmap_info_kv_err_kv_is_null,
     );
 }

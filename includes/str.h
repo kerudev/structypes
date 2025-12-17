@@ -223,16 +223,17 @@ bool str_info(char *s);
 #define __STR_IMPLEMENTED
 
 #ifdef STRUCTYPES_DEBUG
-static void _str_err(char *msg, ...) {
+static void _str_err(const char *file, int line, const char *func, const char *fmt, ...) {
     va_list args;
-    va_start(args, msg);
-    vfprintf(stderr, msg, args);
+    va_start(args, fmt);
+    fprintf(stderr, "[%s:%d] %s: ", file, line, func);
+    vfprintf(stderr, fmt, args);
     fprintf(stderr, "\n");
     va_end(args);
 }
-#define THROW(ret, msg, ...) ({ _str_err(msg, ##__VA_ARGS__); return ret; })
+#define THROW(ret, fmt, ...) ({ _str_err(__FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__); return ret; })
 #else
-#define THROW(ret, msg, ...) ({ return ret; })
+#define THROW(ret, fmt, ...) ({ return ret; })
 #endif
 
 /**
@@ -254,7 +255,7 @@ static void _str_err(char *msg, ...) {
     str_join_arr(joiner, (char *[]){ __VA_ARGS__ }, sizeof((char *[]){ __VA_ARGS__ }) / sizeof(char *))
 
 size_t str_len(char *s) {
-    if (!s) THROW(0, "str_len: s evaluates to false");
+    if (!s) THROW(0, "s evaluates to false");
 
     size_t len = 0;
     while (s[len]) len++;
@@ -262,11 +263,11 @@ size_t str_len(char *s) {
 }
 
 char *str_clone(char *s) {
-    if (!s) THROW(NULL, "str_clone: s evaluates to false");
+    if (!s) THROW(NULL, "s evaluates to false");
 
     size_t len = str_len(s) + 1;
     char *copy = malloc(len);
-    if (!copy) THROW(NULL, "str_clone: malloc error");
+    if (!copy) THROW(NULL, "malloc error");
 
     for (size_t i = 0; i < len; i++) copy[i] = s[i];
 
@@ -286,7 +287,7 @@ char str_char_at(char *str, int n) {
     int len = (int)str_len(str);
 
     if (abs(n) > len)
-        THROW('\0', "str_char_at: index %d out of bounds for string of size %d", n, len);
+        THROW('\0', "index %d out of bounds for string of size %d", n, len);
 
     return (n < 0) ? str[len + n] : str[n];
 }
@@ -304,7 +305,7 @@ char *__str_tok(char **str, const char *sep) {
     char *tmp = *str;
 
     if (!tmp || !*tmp) return NULL;
-    if (!sep) THROW(NULL, "__str_tok: sep evaluates to false");
+    if (!sep) THROW(NULL, "sep evaluates to false");
 
     char *ret = malloc(str_len(tmp) + 1);
     char *token = ret;
@@ -325,10 +326,10 @@ char *__str_tok(char **str, const char *sep) {
 
 char **str_split(char *str, const char *sep, size_t *total) {
     if (!str || !sep)
-        THROW(NULL, "str_split: str or sep evaluate to false");
+        THROW(NULL, "str or sep evaluate to false");
 
     char *tmp = str_clone(str);
-    if (tmp == NULL) THROW(NULL, "str_split: error cloning str");
+    if (tmp == NULL) THROW(NULL, "error cloning str");
     char *ptr = tmp;
 
     char **tokens = NULL;
@@ -342,7 +343,7 @@ char **str_split(char *str, const char *sep, size_t *total) {
         if (!new_tokens) {
             free(tokens);
             free(tmp);
-            THROW(NULL, "str_split: realloc error");
+            THROW(NULL, "realloc error");
         }
 
         tokens = new_tokens;
@@ -356,13 +357,13 @@ char **str_split(char *str, const char *sep, size_t *total) {
 
 char *str_split_first(char *str, const char *sep) {
     char *tmp = str_clone(str);
-    if (tmp == NULL) THROW(NULL, "str_split_first: error cloning str");
+    if (tmp == NULL) THROW(NULL, "error cloning str");
     char *ptr = tmp;
 
     char *token = __str_tok(&tmp, sep);
     if (token == NULL) {
         free(tmp);
-        THROW(NULL, "str_split_first: __str_tok error");
+        THROW(NULL, "__str_tok error");
     }
 
     free(ptr);
@@ -374,7 +375,7 @@ char *str_split_last(char *str, const char *sep) {
     if (!str) return str;
 
     char *tmp = str_clone(str);
-    if (tmp == NULL) THROW(NULL, "str_split_last: error cloning str");
+    if (tmp == NULL) THROW(NULL, "error cloning str");
     char *ptr = tmp;
 
     char *token;
@@ -390,18 +391,18 @@ char *str_split_last(char *str, const char *sep) {
 }
 
 char *__str_concat(char *s1, char *s2) {
-    if (s1 == NULL) THROW(NULL, "__str_concat: s1 can't be NULL");
-    if (s2 == NULL) THROW(NULL, "__str_concat: s2 can't be NULL");
+    if (s1 == NULL) THROW(NULL, "s1 can't be NULL");
+    if (s2 == NULL) THROW(NULL, "s2 can't be NULL");
 
     size_t len = str_len(s1);
 
     char *clone = str_clone(s1);
-    if (!clone) THROW(NULL, "__str_concat: str_clone error");
+    if (!clone) THROW(NULL, "str_clone error");
 
     char *buf = realloc(clone, len + str_len(s2) + 1);
     if (!buf) {
         free(clone);
-        THROW(NULL, "__str_concat: realloc error");
+        THROW(NULL, "realloc error");
     }
 
     char *ptr = buf + len;
@@ -413,17 +414,17 @@ char *__str_concat(char *s1, char *s2) {
 }
 
 char *str_concat_arr(char **arr, size_t size) {
-    if (!arr) THROW(NULL, "str_concat_arr: arr evaluates to false");
-    if (!size) THROW(NULL, "str_concat_arr: size can't be 0");
+    if (!arr) THROW(NULL, "arr evaluates to false");
+    if (!size) THROW(NULL, "size can't be 0");
 
     char *buf = str_clone(arr[0]);
-    if (!buf) THROW(NULL, "str_concat_arr: str_clone failed");
+    if (!buf) THROW(NULL, "str_clone failed");
 
     for (size_t i = 1; i < size; i++) {
         char *tmp = __str_concat(buf, arr[i]);
         if (!tmp) {
             free(buf);
-            THROW(NULL, "str_concat_arr: __str_concat error on loop");
+            THROW(NULL, "__str_concat error on loop");
         }
 
         free(buf);
@@ -435,18 +436,18 @@ char *str_concat_arr(char **arr, size_t size) {
 }
 
 char *str_join_arr(char *joiner, char **arr, size_t size) {
-    if (!joiner) THROW(NULL, "str_join_arr: joiner evaluates to false");
-    if (!arr) THROW(NULL, "str_join_arr: arr evaluates to false");
-    if (!size) THROW(NULL, "str_join_arr: size can't be 0");
+    if (!joiner) THROW(NULL, "joiner evaluates to false");
+    if (!arr) THROW(NULL, "arr evaluates to false");
+    if (!size) THROW(NULL, "size can't be 0");
 
     char *buf = str_clone(arr[0]);
-    if (!buf) THROW(NULL, "str_join_arr: str_clone failed");
+    if (!buf) THROW(NULL, "str_clone failed");
 
     for (size_t i = 1; i < size; i++) {
         char *tmp = str_concat(buf, joiner, arr[i]);
         if (!tmp) {
             free(buf);
-            THROW(NULL, "str_join_arr: str_concat failed to join with %s", arr[i]);
+            THROW(NULL, "str_concat failed to join with %s", arr[i]);
         }
 
         free(buf);
@@ -458,13 +459,13 @@ char *str_join_arr(char *joiner, char **arr, size_t size) {
 }
 
 char *str_ltrim(char *s) {
-    if (s == NULL) THROW(NULL, "str_ltrim: s can't be NULL");
+    if (s == NULL) THROW(NULL, "s can't be NULL");
     while(str_char_is_space(*s)) s++;
     return s;
 }
 
 char *str_rtrim(char *s) {
-    if (s == NULL) THROW(NULL, "str_rtrim: s can't be NULL");
+    if (s == NULL) THROW(NULL, "s can't be NULL");
 
     int len = str_len(s);
     if (len == 0) return s;
@@ -479,13 +480,13 @@ char *str_rtrim(char *s) {
 }
 
 char *str_trim(char *s) {
-    if (s == NULL) THROW(NULL, "str_trim: s can't be NULL");
+    if (s == NULL) THROW(NULL, "s can't be NULL");
     return str_ltrim(str_rtrim(s));
 }
 
 bool str_eq(char *s1, char *s2) {
-    if (s1 == NULL) THROW(false, "str_eq: s1 can't be NULL");
-    if (s2 == NULL) THROW(false, "str_eq: s2 can't be NULL");
+    if (s1 == NULL) THROW(false, "s1 can't be NULL");
+    if (s2 == NULL) THROW(false, "s2 can't be NULL");
 
     while (*s1 && *s2) if (*s1++ != *s2++) return false;
 
@@ -493,15 +494,15 @@ bool str_eq(char *s1, char *s2) {
 }
 
 int str_diff(char *s1, char *s2) {
-    if (s1 == NULL) THROW(-1, "str_diff: s1 can't be NULL");
-    if (s2 == NULL) THROW(-1, "str_diff: s2 can't be NULL");
+    if (s1 == NULL) THROW(-1, "s1 can't be NULL");
+    if (s2 == NULL) THROW(-1, "s2 can't be NULL");
 
     while (*s1 && *s2 && *s1 == *s2) s1++, s2++;
     return (unsigned char)*s1 - (unsigned char)*s2;
 }
 
 bool str_info(char *s) {
-    if (s == NULL) THROW(false, "str_info: s can't be NULL");
+    if (s == NULL) THROW(false, "s can't be NULL");
 
     printf("string: %s\n", s);
     printf("len: %zu\n", str_len(s));

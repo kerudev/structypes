@@ -195,16 +195,17 @@ NodePrintOpts nodeprintopts_default();
 #define __NODE_IMPLEMENTED
 
 #ifdef STRUCTYPES_DEBUG
-static void _node_err(char *msg, ...) {
+static void _node_err(const char *file, int line, const char *func, const char *fmt, ...) {
     va_list args;
-    va_start(args, msg);
-    vfprintf(stderr, msg, args);
+    va_start(args, fmt);
+    fprintf(stderr, "[%s:%d] %s: ", file, line, func);
+    vfprintf(stderr, fmt, args);
     fprintf(stderr, "\n");
     va_end(args);
 }
-#define THROW(ret, msg, ...) ({ _node_err(msg, ##__VA_ARGS__); return ret; })
+#define THROW(ret, fmt, ...) ({ _node_err(__FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__); return ret; })
 #else
-#define THROW(ret, msg, ...) ({ return ret; })
+#define THROW(ret, fmt, ...) ({ return ret; })
 #endif
 
 static int _indent = 0;
@@ -232,7 +233,7 @@ static void _print_indent(unsigned int indent, void *value) {
 Node *node_new(void *value) {
     Node *node = malloc(sizeof(Node));
     if (!node)
-        THROW(NULL, "node_new: malloc error on initialize root");
+        THROW(NULL, "malloc error on initialize root");
 
     node->value = value;
     node->parent = NULL;
@@ -244,7 +245,7 @@ Node *node_new(void *value) {
 
 bool node_free_struct(Node *node) {
     if (!node)
-        THROW(false, "node_free_struct: node evaluates to false");
+        THROW(false, "node evaluates to false");
 
     if (node->nodes) free(node->nodes);
 
@@ -256,12 +257,12 @@ bool node_free_struct(Node *node) {
 
 bool node_free(Node *node) {
     if (!node)
-        THROW(false, "node_free: node evaluates to false");
+        THROW(false, "node evaluates to false");
 
     if (node->nodes) {
         for (size_t i = 0; i < node->size; i++) {
             if (!node_free(node->nodes[i]))
-                THROW(false, "node_free: recursion error");
+                THROW(false, "recursion error");
         }
     }
 
@@ -272,12 +273,12 @@ bool node_free(Node *node) {
 
 bool node_free_stack(Node *node) {
     if (!node)
-        THROW(false, "node_free_stack: node evaluates to false");
+        THROW(false, "node evaluates to false");
 
     if (node->nodes) {
         for (size_t i = 0; i < node->size; i++) {
             if (!node_free_stack(node->nodes[i]))
-                THROW(false, "node_free_stack: recursion error");
+                THROW(false, "recursion error");
         }
     }
 
@@ -286,31 +287,31 @@ bool node_free_stack(Node *node) {
 
 Node *node_add(Node *parent, void *value) {
     if (!parent)
-        THROW(NULL, "node_add: parent evaluates to false");
+        THROW(NULL, "parent evaluates to false");
 
     Node *node = node_new(value);
     if (!node)
-        THROW(NULL, "node_add: malloc error on initialize root");
+        THROW(NULL, "malloc error on initialize root");
 
     if (!node_add_child(parent, node))
-        THROW(NULL, "node_add: error adding node to parent");
+        THROW(NULL, "error adding node to parent");
 
     return node;
 }
 
 bool node_add_child(Node *parent, Node *child) {
     if (!parent)
-        THROW(false, "node_add_child: parent evaluates to false");
+        THROW(false, "parent evaluates to false");
 
     if (!child)
-        THROW(false, "node_add_child: child evaluates to false");
+        THROW(false, "child evaluates to false");
 
     if (parent == child)
-        THROW(false, "node_add_child: parent points to the same reference as child");
+        THROW(false, "parent points to the same reference as child");
 
     void *tmp = realloc(parent->nodes, (parent->size + 1) * sizeof(Node *));
     if (!tmp)
-        THROW(false, "node_add_child: realloc error");
+        THROW(false, "realloc error");
 
     child->parent = parent;
 
@@ -322,10 +323,10 @@ bool node_add_child(Node *parent, Node *child) {
 
 bool node_print(Node *node, NodePrintOpts opts) {
     if (!node)
-        THROW(false, "node_print: node evaluates to false");
+        THROW(false, "node evaluates to false");
 
     if (opts.indent_step < 1)
-        THROW(false, "node_print: indent_step must be greater than 0");
+        THROW(false, "indent_step must be greater than 0");
 
     _print_indent(opts.indent, node->value);
     if (!node->size) return true;
@@ -333,12 +334,12 @@ bool node_print(Node *node, NodePrintOpts opts) {
     size_t sizeofNode = sizeof(void *);
 
     Node **zero = malloc(sizeofNode * node->size);
-    if (!zero) THROW(false, "node_print: malloc error for zero");
+    if (!zero) THROW(false, "malloc error for zero");
 
     Node **nonZero = malloc(sizeofNode * node->size);
     if (!nonZero) {
         free(zero);
-        THROW(false, "node_print: malloc error for nonZero");
+        THROW(false, "malloc error for nonZero");
     }
 
     size_t zeroLen = 0;
@@ -364,7 +365,7 @@ bool node_print(Node *node, NodePrintOpts opts) {
         if (!node_print(nonZero[i], opts)) {
             free(zero);
             free(nonZero);
-            THROW(false, "node_print: recursion error");
+            THROW(false, "recursion error");
         }
 
     free(zero);
@@ -374,7 +375,7 @@ bool node_print(Node *node, NodePrintOpts opts) {
 }
 
 bool node_print_deep(Node *node) {
-    if (!node) THROW(false, "node_print_deep: node evaluates to false");
+    if (!node) THROW(false, "node evaluates to false");
 
     _print_indent(_indent, node->value);
 
@@ -386,7 +387,7 @@ bool node_print_deep(Node *node) {
 
         if (child->size > 0) {
             if (!node_print_deep(child))
-                THROW(false, "node_print_deep: recursion error");
+                THROW(false, "recursion error");
             _indent = local_indent;
         } else {
             _print_indent(_indent, child->value);
@@ -398,7 +399,7 @@ bool node_print_deep(Node *node) {
 
 bool node_print_shallow(Node *node) {
     if (!node)
-        THROW(false, "node_print_shallow: node evaluates to false");
+        THROW(false, "node evaluates to false");
 
     printf("%s\n", (char *)node->value);
 
@@ -409,7 +410,7 @@ bool node_print_shallow(Node *node) {
 }
 
 bool node_info(Node *node) {
-    if (!node) THROW(false, "node_info: node evaluates to false");
+    if (!node) THROW(false, "node evaluates to false");
 
     printf("parent: %s\n",  node->parent
         ? (char *)node->parent->value
@@ -424,7 +425,7 @@ bool node_info(Node *node) {
 
 size_t node_total(Node *node) {
     if (!node)
-        THROW(0, "node_total: node evaluates to false");
+        THROW(0, "node evaluates to false");
 
     size_t total = node->size;
 

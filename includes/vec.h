@@ -157,9 +157,9 @@ static void _vec_err(const char *file, int line, const char *func, const char *f
     fprintf(stderr, "\n");
     va_end(args);
 }
-#define THROW(ret, fmt, ...) ({ _vec_err(__FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__); return ret; })
+#define VEC_THROW(ret, fmt, ...) ({ _vec_err(__FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__); return ret; })
 #else
-#define THROW(ret, fmt, ...) ({ return ret; })
+#define VEC_THROW(ret, fmt, ...) ({ return ret; })
 #endif
 
 static int _vec_comp(const void *a, const void *b) {
@@ -186,36 +186,34 @@ static int _vec_comp(const void *a, const void *b) {
 
 Vec *vec_new() {
     if (VEC_CAPACITY_STEP < 1)
-        THROW(NULL, "VEC_CAPACITY_STEP must be 1 or greater");
+        VEC_THROW(NULL, "VEC_CAPACITY_STEP must be 1 or greater");
 
     Vec *v = malloc(sizeof(Vec));
-    if (!v)
-        THROW(NULL, "malloc error on initialize vector");
+    if (!v) VEC_THROW(NULL, "malloc error for vector");
 
     v->size = 0;
     v->capacity = VEC_CAPACITY_STEP;
-    v->items = malloc(v->capacity * sizeof(void *));
 
-    if (!v->items)
-        THROW(NULL, "malloc error on initialize items");
+    v->items = malloc(v->capacity * sizeof(void *));
+    if (!v->items) VEC_THROW(NULL, "malloc error for vector items");
 
     return v;
 }
 
 Vec *vec_from_arr(void **arr, size_t size) {
-    if (!arr) THROW(NULL, "arr evaluates to false");
+    if (!arr) VEC_THROW(NULL, "arr evaluates to false");
 
     Vec *v = vec_new();
-    if (!v) THROW(NULL, "vec_new failed");
+    if (!v) VEC_THROW(NULL, "vec_new failed");
 
     for (size_t i = 0; i < size; i++)
-        if (!vec_push(v, arr[i])) THROW(NULL, "vec_new failed");
+        if (!vec_push(v, arr[i])) VEC_THROW(NULL, "vec_new failed");
 
     return v;
 }
 
 bool vec_free_struct(Vec *v) {
-    if (!v) THROW(false, "v evaluates to false");
+    if (!v) VEC_THROW(false, "v evaluates to false");
 
     free(v->items);
     free(v);
@@ -225,7 +223,7 @@ bool vec_free_struct(Vec *v) {
 }
 
 bool vec_free(Vec *v) {
-    if (!v) THROW(false, "v evaluates to false");
+    if (!v) VEC_THROW(false, "v evaluates to false");
 
     if (v->items) {
         for (size_t i = 0; i < v->size; i++)
@@ -242,16 +240,16 @@ bool vec_free(Vec *v) {
 }
 
 bool vec_push(Vec *v, void *item) {
-    if (!v) THROW(false, "v evaluates to false");
+    if (!v) VEC_THROW(false, "v evaluates to false");
 
     if (v->size == v->capacity) {
         if (VEC_CAPACITY_STEP < 1)
-            THROW(false, "VEC_CAPACITY_STEP must be 1 or greater");
+            VEC_THROW(false, "VEC_CAPACITY_STEP must be 1 or greater");
 
         v->capacity += VEC_CAPACITY_STEP;
 
         void *tmp = realloc(v->items, v->capacity * sizeof(void *));
-        if (!tmp) THROW(false, "realloc error");
+        if (!tmp) VEC_THROW(false, "realloc error");
 
         v->items = tmp;
     }
@@ -262,16 +260,14 @@ bool vec_push(Vec *v, void *item) {
 }
 
 bool vec_extend(Vec *dst, Vec *src) {
-    if (!dst) THROW(false, "dst evaluates to false");
-
-    if (!src->size)
-        THROW(false, "src vector is uninitialized");
+    if (!dst) VEC_THROW(false, "dst evaluates to false");
+    if (!src->size) VEC_THROW(false, "src vector is uninitialized");
 
     size_t totalSize = dst->size + src->size;
 
     if (totalSize > dst->capacity) {
         void *tmp = realloc(dst->items, totalSize * sizeof(void *));
-        if (!tmp) THROW(false, "realloc error");
+        if (!tmp) VEC_THROW(false, "realloc error");
 
         dst->items = tmp;
         dst->capacity = totalSize;
@@ -286,20 +282,20 @@ bool vec_extend(Vec *dst, Vec *src) {
 }
 
 void *vec_get(Vec *v, int n) {
-    if (!v) THROW(false, "v evaluates to false");
-    if (!v->size) THROW(NULL, "vector is uninitialized");
+    if (!v) VEC_THROW(false, "v evaluates to false");
+    if (!v->size) VEC_THROW(NULL, "vector is uninitialized");
 
     int len = (int)v->size;
 
     if (abs(n) > len)
-        THROW(NULL, "index %d out of bounds (size %d)", n, len);
+        VEC_THROW(NULL, "index %d out of bounds (size %d)", n, len);
 
     return (n < 0) ? v->items[n + len] : v->items[n];
 }
 
 void *vec_pop(Vec *v) {
-    if (!v) THROW(NULL, "v evaluates to false");
-    if (!v->size) THROW(NULL, "v has no elements");
+    if (!v) VEC_THROW(NULL, "v evaluates to false");
+    if (!v->size) VEC_THROW(NULL, "v has no elements");
 
     v->size--;
 
@@ -310,7 +306,7 @@ void *vec_pop(Vec *v) {
 }
 
 bool vec_sort(Vec *v) {
-    if (!v) THROW(false, "v evaluates to false");
+    if (!v) VEC_THROW(false, "v evaluates to false");
 
     qsort(v->items, v->size, sizeof(void *), _vec_comp);
 
@@ -318,10 +314,10 @@ bool vec_sort(Vec *v) {
 }
 
 bool vec_eq(Vec *v1, Vec *v2) {
-    if (!v1) THROW(false, "v1 evaluates to false");
-    if (!v2) THROW(false, "v2 evaluates to false");
+    if (!v1) VEC_THROW(false, "v1 evaluates to false");
+    if (!v2) VEC_THROW(false, "v2 evaluates to false");
 
-    if (v1->size != v2->size) THROW(false, "sizes are different");
+    if (v1->size != v2->size) VEC_THROW(false, "sizes are different");
 
     for (size_t i = 0; i < v1->size; i++) {
         char *s1 = v1->items[i];
@@ -334,8 +330,8 @@ bool vec_eq(Vec *v1, Vec *v2) {
 }
 
 bool vec_print(Vec *v) {
-    if (!v) THROW(false, "v evaluates to false");
-    if (!v->size) THROW(false, "v is uninitialized");
+    if (!v) VEC_THROW(false, "v evaluates to false");
+    if (!v->size) VEC_THROW(false, "v is uninitialized");
 
     for (size_t i = 0; i < v->size; i++)
         printf("%zu %s\n", i, (char *)vec_get(v, i));
@@ -344,7 +340,7 @@ bool vec_print(Vec *v) {
 }
 
 bool vec_info(Vec *v) {
-    if (!v) THROW(false, "v evaluates to false");
+    if (!v) VEC_THROW(false, "v evaluates to false");
 
     printf("size:     %zu\n", v->size);
     printf("capacity: %zu\n", v->capacity);

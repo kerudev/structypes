@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdarg.h>
+#include <limits.h>
 
 typedef struct {
     char *key;
@@ -114,6 +115,7 @@ bool hashmap_free_stack(HashMap *hm);
  * - `hm->capacity` is 0.
  * - `hm->items` evaluates to false.
  * - `k` is `NULL`.
+ * - There is no `KV` to get a value from.
  */
 void *hashmap_get(HashMap *hm, char *k);
 
@@ -252,13 +254,17 @@ static void _hashmap_err(const char *file, int line, const char *func, const cha
 #define HM_THROW(ret, fmt, ...) ({ _hashmap_err(__FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__); return ret; })
 #else
 #define HM_THROW(ret, fmt, ...) ({ return ret; })
-#endif
+#endif // STRUCTYPES_DEBUG
+
+// TODO put this inside the HashMap struct. Having more than one hashmap would break this
+static hash_t __hashmap_first_hash = INT_MAX;
+static hash_t __hashmap_last_hash = 0;
 
 /**
  * Hashes a key using `HASHMAP_HASH_ALGORITHM`, then takes the modulo of `capacity`.
  */
 #define hashmap_hash(k, capacity) \
-    HASHMAP_HASH_ALGORITHM((unsigned char *)k) % capacity;
+    HASHMAP_HASH_ALGORITHM((unsigned char *)k) % capacity
 
 hash_t djb2(unsigned char *str) {
     hash_t hash = 5381;
@@ -288,6 +294,9 @@ HashMap *hashmap_new(size_t capacity) {
         free(hm);
         HM_THROW(NULL, "calloc error");
     }
+
+    __hashmap_first_hash = INT_MAX;
+    __hashmap_last_hash = 0;
 
     return hm;
 }
@@ -375,11 +384,13 @@ void *hashmap_get(HashMap *hm, char *k) {
     if (k == NULL) HM_THROW(NULL, "k can't be NULL");
 
     hash_t hash = hashmap_hash(k, hm->capacity);
+    if (!hm->items[hash]) return NULL;
 
     return hm->items[hash]->value;
 }
 
 bool hashmap_set(HashMap *hm, char *k, void *v) {
+    // TODO handle case where redefining a key causes a memory leak
     if (!hm) HM_THROW(false, "hm evaluates to false");
     if (!hm->capacity) HM_THROW(false, "capacity can't be 0");
     if (!hm->items) HM_THROW(false, "items evaluates to false");
@@ -392,6 +403,9 @@ bool hashmap_set(HashMap *hm, char *k, void *v) {
     hash_t hash = hashmap_hash(k, hm->capacity);
     hm->items[hash] = hashmap_new_kv(k, v);
     hm->size++;
+
+    if (hash < __hashmap_first_hash) __hashmap_first_hash = hash;
+    if (hash > __hashmap_last_hash) __hashmap_last_hash = hash;
 
     return true;
 }
@@ -416,6 +430,9 @@ bool hashmap_resize(HashMap *hm, size_t capacity) {
             hash_t hash = hashmap_hash(hm->items[i]->key, tmp->capacity);
             tmp->items[hash] = hm->items[i];
             tmp->size++;
+
+            if (hash < __hashmap_first_hash) __hashmap_first_hash = hash;
+            if (hash > __hashmap_last_hash) __hashmap_last_hash = hash;
         }
     }
 
@@ -438,8 +455,9 @@ char **hashmap_keys(HashMap *hm) {
     if (!keys) HM_THROW(NULL, "malloc error");
 
     size_t i = 0;
-    for (size_t j = 0; j < hm->capacity; j++) {
+    for (size_t j = __hashmap_first_hash; j <= __hashmap_last_hash; j++) {
         if (!hm->items[j]) continue;
+        printf("hash = %zu\n", j);
         keys[i++] = hm->items[j]->key;
     }
 
@@ -456,7 +474,7 @@ void **hashmap_values(HashMap *hm) {
     if (!values) HM_THROW(NULL, "malloc error");
 
     size_t i = 0;
-    for (size_t j = 0; j < hm->capacity; j++) {
+    for (size_t j = __hashmap_first_hash; j <= __hashmap_last_hash; j++) {
         if (!hm->items[j]) continue;
         values[i++] = hm->items[j]->value;
     }
@@ -474,7 +492,7 @@ KV **hashmap_items(HashMap *hm) {
     if (!items) HM_THROW(NULL, "malloc error");
 
     size_t i = 0;
-    for (size_t j = 0; j < hm->capacity; j++) {
+    for (size_t j = __hashmap_first_hash; j <= __hashmap_last_hash; j++) {
         if (!hm->items[j]) continue;
         items[i++] = hm->items[j];
     }
@@ -488,7 +506,7 @@ bool hashmap_eq(HashMap *hm1, HashMap *hm2) {
 
     if (hm1->size != hm2->size) HM_THROW(false, "sizes are different");
 
-    for (size_t i = 0; i < hm1->capacity; i++) {
+    for (size_t i = __hashmap_first_hash; i <= __hashmap_last_hash; i++) {
         KV *kv1 = hm1->items[i];
         KV *kv2 = hm2->items[i];
         if (!kv1 && !kv2) continue;
@@ -519,7 +537,7 @@ bool hashmap_print(HashMap *hm) {
 
     printf("{\n");
 
-    for (size_t i = 0; i < hm->capacity; i++) {
+    for (size_t i = __hashmap_first_hash; i <= __hashmap_last_hash; i++) {
         if (!hm->items[i]) continue;
 
         KV *kv = hm->items[i];

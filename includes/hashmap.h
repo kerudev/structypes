@@ -259,6 +259,7 @@ static void _hashmap_err(const char *file, int line, const char *func, const cha
 // TODO put this inside the HashMap struct. Having more than one hashmap would break this
 static hash_t __hashmap_first_hash = INT_MAX;
 static hash_t __hashmap_last_hash = 0;
+static hash_t __hashmap_iter_hash = -1;
 
 /**
  * Hashes a key using `HASHMAP_HASH_ALGORITHM`, then takes the modulo of `capacity`.
@@ -297,6 +298,7 @@ HashMap *hashmap_new(size_t capacity) {
 
     __hashmap_first_hash = INT_MAX;
     __hashmap_last_hash = 0;
+    __hashmap_iter_hash = -1;
 
     return hm;
 }
@@ -445,6 +447,22 @@ bool hashmap_resize(HashMap *hm, size_t capacity) {
     return true;
 }
 
+// TODO check what happens when various elements are sequentially hashed [1, 2, 3]
+bool hashmap_iter(HashMap *hm) {
+    printf("iter hash = %zu\n", __hashmap_iter_hash);
+
+    __hashmap_iter_hash++;
+
+    for (; __hashmap_iter_hash <= __hashmap_last_hash; __hashmap_iter_hash++) {
+        if (!hm->items[__hashmap_iter_hash]) continue;
+        return true;
+    }
+
+    __hashmap_iter_hash = -1;
+
+    return false;
+}
+
 char **hashmap_keys(HashMap *hm) {
     if (!hm) HM_THROW(NULL, "hm evaluates to false");
     if (!hm->size) HM_THROW(NULL, "hashmap is uninitialized");
@@ -454,11 +472,9 @@ char **hashmap_keys(HashMap *hm) {
     char **keys = malloc(hm->size * sizeof(char *));
     if (!keys) HM_THROW(NULL, "malloc error");
 
-    size_t i = 0;
-    for (size_t j = __hashmap_first_hash; j <= __hashmap_last_hash; j++) {
-        if (!hm->items[j]) continue;
-        printf("hash = %zu\n", j);
-        keys[i++] = hm->items[j]->key;
+    size_t size = 0;
+    while (hashmap_iter(hm)) {
+        keys[size++] = hm->items[__hashmap_iter_hash]->key;
     }
 
     return keys;
@@ -473,10 +489,9 @@ void **hashmap_values(HashMap *hm) {
     void **values = malloc(hm->size * sizeof(void *));
     if (!values) HM_THROW(NULL, "malloc error");
 
-    size_t i = 0;
-    for (size_t j = __hashmap_first_hash; j <= __hashmap_last_hash; j++) {
-        if (!hm->items[j]) continue;
-        values[i++] = hm->items[j]->value;
+    size_t size = 0;
+    while (hashmap_iter(hm)) {
+        values[size++] = hm->items[__hashmap_iter_hash]->value;
     }
 
     return values;
@@ -491,10 +506,9 @@ KV **hashmap_items(HashMap *hm) {
     KV **items = malloc(hm->size * sizeof(KV *));
     if (!items) HM_THROW(NULL, "malloc error");
 
-    size_t i = 0;
-    for (size_t j = __hashmap_first_hash; j <= __hashmap_last_hash; j++) {
-        if (!hm->items[j]) continue;
-        items[i++] = hm->items[j];
+    size_t size = 0;
+    while (hashmap_iter(hm)) {
+        items[size++] = hm->items[__hashmap_iter_hash];
     }
 
     return items;
@@ -537,10 +551,8 @@ bool hashmap_print(HashMap *hm) {
 
     printf("{\n");
 
-    for (size_t i = __hashmap_first_hash; i <= __hashmap_last_hash; i++) {
-        if (!hm->items[i]) continue;
-
-        KV *kv = hm->items[i];
+    while (hashmap_iter(hm)) {
+        KV *kv = hm->items[__hashmap_iter_hash];
         printf("  \"%s\": \"%s\"\n", kv->key, (char *)kv->value);
     }
 

@@ -1,10 +1,13 @@
-#include "_test.h"
+#define CUT_IMPLEMENTATION
+#include "cut.h"
+
+#define NODE_IMPLEMENTATION
 #include "../includes/node.h"
 
 bool node_new_ok_heap_allocated() {
     TEST("node_new_ok_heap_allocated");
 
-    char *value = str_clone("abcde");
+    char *value = cut_str_clone("abcde");
     Node *node = node_new(value);
 
     ASSERT_BLOCK(
@@ -50,8 +53,8 @@ bool node_new_ok_value_is_null() {
 bool node_add_ok_heap_allocated() {
     TEST("node_add_ok_heap_allocated");
 
-    char *value1 = str_clone("abcde");
-    char *value2 = str_clone("12345");
+    char *value1 = cut_str_clone("abcde");
+    char *value2 = cut_str_clone("12345");
 
     Node *parent = node_new(value1);
     Node *child = node_add(parent, value2);
@@ -122,8 +125,8 @@ bool node_add_err_parent_is_null() {
 bool node_add_child_ok_heap_allocated() {
     TEST("node_add_child_ok_heap_allocated");
 
-    char *value1 = str_clone("abcde");
-    char *value2 = str_clone("12345");
+    char *value1 = cut_str_clone("abcde");
+    char *value2 = cut_str_clone("12345");
 
     Node *parent = node_new(value1);
     Node *child = node_new(value2);
@@ -361,9 +364,9 @@ bool node_free_struct_err_node_is_null() {
 bool node_free_ok() {
     TEST("node_free_ok");
 
-    Node *parent = node_new(str_clone("abcde"));
-    node_add(parent, str_clone("123"));
-    node_add(parent, str_clone("456"));
+    Node *parent = node_new(cut_str_clone("abcde"));
+    node_add(parent, cut_str_clone("123"));
+    node_add(parent, cut_str_clone("456"));
 
     ASSERT_TRUE(node_free(parent));
 }
@@ -371,7 +374,7 @@ bool node_free_ok() {
 bool node_free_ok_no_nodes() {
     TEST("node_free_ok_no_nodes");
 
-    Node *node = node_new(str_clone("abcde"));
+    Node *node = node_new(cut_str_clone("abcde"));
     node->size = 1;
 
     ASSERT_TRUE(node_free(node));

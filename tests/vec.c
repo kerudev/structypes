@@ -1,4 +1,7 @@
-#include "_test.h"
+#define CUT_IMPLEMENTATION
+#include "cut.h"
+
+#define VEC_IMPLEMENTATION
 #include "../includes/vec.h"
 
 // TODO free memory on tests
@@ -58,9 +61,9 @@ bool vec_from_ok_heap_allocated() {
     TEST("vec_from_ok_heap_allocated");
 
     char *arr[] = {
-        str_clone("foo"),
-        str_clone("bar"),
-        str_clone("baz"),
+        cut_str_clone("foo"),
+        cut_str_clone("bar"),
+        cut_str_clone("baz"),
     };
 
     Vec *v = vec_from(arr);
@@ -108,7 +111,7 @@ bool vec_from_arr_ok_stack_allocated() {
 bool vec_from_arr_ok_heap_allocated() {
     TEST("vec_from_arr_ok_heap_allocated");
 
-    char *arr[] = { str_clone("foo"), str_clone("bar"), str_clone("baz") };
+    char *arr[] = { cut_str_clone("foo"), cut_str_clone("bar"), cut_str_clone("baz") };
 
     Vec *v = vec_from_arr((void**)arr, 3);
 
@@ -153,9 +156,9 @@ bool vec_free_ok() {
     TEST("vec_free_ok");
 
     Vec *v = vec_new();
-    if (!vec_push(v, str_clone("a"))) FAIL();
-    if (!vec_push(v, str_clone("b"))) FAIL();
-    if (!vec_push(v, str_clone("c"))) FAIL();
+    if (!vec_push(v, cut_str_clone("a"))) FAIL();
+    if (!vec_push(v, cut_str_clone("b"))) FAIL();
+    if (!vec_push(v, cut_str_clone("c"))) FAIL();
 
     ASSERT_TRUE(vec_free(v));
 }
@@ -170,9 +173,9 @@ bool vec_push_ok() {
     TEST("vec_push_ok");
 
     Vec *v = vec_new();
-    if (!vec_push(v, str_clone("a"))) FAIL();
-    if (!vec_push(v, str_clone("b"))) FAIL();
-    if (!vec_push(v, str_clone("c"))) FAIL();
+    if (!vec_push(v, cut_str_clone("a"))) FAIL();
+    if (!vec_push(v, cut_str_clone("b"))) FAIL();
+    if (!vec_push(v, cut_str_clone("c"))) FAIL();
 
     ASSERT_BLOCK(
         ASSERT_NOT_NULL(v),
@@ -218,12 +221,12 @@ bool vec_extend_ok_heap_allocated() {
     TEST("vec_extend_ok_heap_allocated");
 
     Vec *v1 = vec_new();
-    vec_push(v1, str_clone("a"));
-    vec_push(v1, str_clone("b"));
+    vec_push(v1, cut_str_clone("a"));
+    vec_push(v1, cut_str_clone("b"));
 
     Vec *v2 = vec_new();
-    vec_push(v2, str_clone("c"));
-    vec_push(v2, str_clone("d"));
+    vec_push(v2, cut_str_clone("c"));
+    vec_push(v2, cut_str_clone("d"));
 
     ASSERT_BLOCK(
         ASSERT_TRUE(vec_extend(v1, v2)),
@@ -360,9 +363,9 @@ bool vec_pop_ok_heap_allocated() {
     TEST("vec_pop_ok_heap_allocated");
 
     Vec *v = vec_new();
-    vec_push(v, str_clone("a"));
-    vec_push(v, str_clone("b"));
-    vec_push(v, str_clone("c"));
+    vec_push(v, cut_str_clone("a"));
+    vec_push(v, cut_str_clone("b"));
+    vec_push(v, cut_str_clone("c"));
 
     char *last = vec_pop(v);
 
@@ -417,11 +420,11 @@ bool vec_sort_ok_heap_allocated() {
     TEST("vec_sort_ok_heap_allocated");
 
     Vec *v = vec_new();
-    vec_push(v, str_clone("b"));
-    vec_push(v, str_clone("d"));
-    vec_push(v, str_clone("e"));
-    vec_push(v, str_clone("c"));
-    vec_push(v, str_clone("a"));
+    vec_push(v, cut_str_clone("b"));
+    vec_push(v, cut_str_clone("d"));
+    vec_push(v, cut_str_clone("e"));
+    vec_push(v, cut_str_clone("c"));
+    vec_push(v, cut_str_clone("a"));
 
     ASSERT_BLOCK(
         ASSERT_TRUE(vec_sort(v)),

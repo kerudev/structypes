@@ -1,4 +1,7 @@
-#include "_test.h"
+#define CUT_IMPLEMENTATION
+#include "cut.h"
+
+#define STR_IMPLEMENTATION
 #include "../includes/str.h"
 
 bool str_len_ok() {
@@ -231,6 +234,9 @@ bool str_split_ok_one_item() {
     char **result = str_split(str, "/", &total);
     char *expected[] = {"abcde"};
     size_t expected_size = 1;
+
+    for (size_t i = 0; i < total; i++) str_info(result[i]);
+    for (size_t i = 0; i < expected_size; i++) str_info(expected[i]);
 
     ASSERT_BLOCK(
         ASSERT_ARR_STR(

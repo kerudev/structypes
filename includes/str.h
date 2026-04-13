@@ -4,9 +4,6 @@
 // - STRUCTYPES_IMPLEMENTATION: defines all of structype's implementations.
 // - STRUCTYPES_DEBUG: if defined, prints error messages.
 //
-// File macros:
-// - STR_IMPLEMENTATION: implementations of string functions.
-//
 // Function macros:
 // - str_concat
 // - str_join
@@ -219,8 +216,9 @@ bool str_info(char *s);
 
 #endif // STR_H_
 
-#if !defined(__STR_IMPLEMENTED) && (defined(STRUCTYPES_IMPLEMENTATION) || defined(STR_IMPLEMENTATION))
-#define __STR_IMPLEMENTED
+// This allows the user to use an implementation in more than one file without linker errors
+#if !defined(__STRUCTYPES_STR_IMPLEMENTED) && (defined(STRUCTYPES_IMPLEMENTATION))
+#define __STRUCTYPES_STR_IMPLEMENTED
 
 #ifdef STRUCTYPES_DEBUG
 static void _str_err(const char *file, int line, const char *func, const char *fmt, ...) {
@@ -234,7 +232,7 @@ static void _str_err(const char *file, int line, const char *func, const char *f
 #define STR_THROW(ret, fmt, ...) ({ _str_err(__FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__); return ret; })
 #else
 #define STR_THROW(ret, fmt, ...) ({ return ret; })
-#endif
+#endif // STRUCTYPES_DEBUG
 
 /**
  * Concatenates all strings passed and returns the result.
@@ -509,4 +507,4 @@ bool str_info(char *s) {
     return true;
 }
 
-#endif // STR_IMPLEMENTATION
+#endif // STRUCTYPES_IMPLEMENTATION

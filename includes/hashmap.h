@@ -5,7 +5,6 @@
 // - STRUCTYPES_DEBUG: if defined, prints error messages.
 //
 // File macros:
-// - HASHMAP_IMPLEMENTATION: implementations of node functions.
 // - HASHMAP_CAPACITY_STEP: how much the capacity will increment on resize.
 //   By default, `1024`.
 // - HASHMAP_LOAD_FACTOR: when `hm->size / hm->capacity > HASHMAP_LOAD_FACTOR`,
@@ -227,8 +226,9 @@ bool hashmap_info(HashMap *hm);
 
 #endif // HASHMAP_H_
 
-#if !defined(__HASHMAP_IMPLEMENTED) && (defined(STRUCTYPES_IMPLEMENTATION) || defined(HASHMAP_IMPLEMENTATION))
-#define __HASHMAP_IMPLEMENTED
+// This allows the user to use an implementation in more than one file without linker errors
+#if !defined(__STRUCTYPES_HASHMAP_IMPLEMENTED) && defined(STRUCTYPES_IMPLEMENTATION)
+#define __STRUCTYPES_HASHMAP_IMPLEMENTED
 
 #ifndef HASHMAP_CAPACITY_STEP
 #define HASHMAP_CAPACITY_STEP 1024
@@ -579,4 +579,4 @@ bool hashmap_info(HashMap *hm) {
     return true;
 }
 
-#endif // HASHMAP_IMPLEMENTATION
+#endif // STRUCTYPES_IMPLEMENTATION

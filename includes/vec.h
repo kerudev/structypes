@@ -5,7 +5,6 @@
 // - STRUCTYPES_DEBUG: if defined, prints error messages.
 //
 // File macros:
-// - VEC_IMPLEMENTATION: implementations of the Vec structure.
 // - VEC_CAPACITY_STEP: used to initialize and realloc the Vec's capacity.
 //   By default, `4`.
 //
@@ -141,8 +140,9 @@ bool vec_info(Vec *v);
 
 #endif // VEC_H_
 
-#if !defined(__VEC_IS_IMPLEMENTED) && (defined(STRUCTYPES_IMPLEMENTATION) || defined(VEC_IMPLEMENTATION))
-#define __VEC_IS_IMPLEMENTED
+// This allows the user to use an implementation in more than one file without linker errors
+#if !defined(__STRUCTYPES_VEC_IMPLEMENTED) && (defined(STRUCTYPES_IMPLEMENTATION))
+#define __STRUCTYPES_VEC_IMPLEMENTED
 
 #ifndef VEC_CAPACITY_STEP
 #define VEC_CAPACITY_STEP 4
@@ -160,7 +160,7 @@ static void _vec_err(const char *file, int line, const char *func, const char *f
 #define VEC_THROW(ret, fmt, ...) ({ _vec_err(__FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__); return ret; })
 #else
 #define VEC_THROW(ret, fmt, ...) ({ return ret; })
-#endif
+#endif // STRUCTYPES_DEBUG
 
 static int _vec_comp(const void *a, const void *b) {
     const char *s1 = *(const char **)a;
@@ -348,4 +348,4 @@ bool vec_info(Vec *v) {
     return true;
 }
 
-#endif // VEC_IMPLEMENTATION
+#endif // STRUCTYPES_IMPLEMENTATION

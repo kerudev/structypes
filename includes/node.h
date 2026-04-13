@@ -3,9 +3,6 @@
 // Library macros:
 // - STRUCTYPES_IMPLEMENTATION: defines all of structype's implementations.
 // - STRUCTYPES_DEBUG: if defined, prints error messages.
-//
-// File macros:
-// - NODE_IMPLEMENTATION: implementations of node functions.
 
 #ifndef NODE_H_
 #define NODE_H_
@@ -191,8 +188,9 @@ NodePrintOpts nodeprintopts_default();
 
 #endif // NODE_H_
 
-#if !defined(__NODE_IMPLEMENTED) && (defined(STRUCTYPES_IMPLEMENTATION) || defined(NODE_IMPLEMENTATION))
-#define __NODE_IMPLEMENTED
+// This allows the user to use an implementation in more than one file without linker errors
+#if !defined(__STRUCTYPES_NODE_IMPLEMENTED) && (defined(STRUCTYPES_IMPLEMENTATION))
+#define __STRUCTYPES_NODE_IMPLEMENTED
 
 #ifdef STRUCTYPES_DEBUG
 static void _node_err(const char *file, int line, const char *func, const char *fmt, ...) {
@@ -206,7 +204,7 @@ static void _node_err(const char *file, int line, const char *func, const char *
 #define NODE_THROW(ret, fmt, ...) ({ _node_err(__FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__); return ret; })
 #else
 #define NODE_THROW(ret, fmt, ...) ({ return ret; })
-#endif
+#endif // STRUCTYPES_DEBUG
 
 static int _indent = 0;
 static int _indent_step = 2;
@@ -430,4 +428,4 @@ NodePrintOpts nodeprintopts_default() {
     };
 }
 
-#endif // NODE_IMPLEMENTATION
+#endif // STRUCTYPES_IMPLEMENTATION
